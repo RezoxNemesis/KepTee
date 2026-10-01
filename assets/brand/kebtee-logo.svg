@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">KebTee — Make every pixel yours</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#08111F"/><stop offset=".55" stop-color="#17183B"/><stop offset="1" stop-color="#301744"/></linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#B9F7FF"/><stop offset="1" stop-color="#22D3EE"/></linearGradient>
+    <linearGradient id="violet" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#BCA7FF"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient>
+    <linearGradient id="pink" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFB3D8"/><stop offset="1" stop-color="#EC4899"/></linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="12"/></filter>
+  </defs>
+  <rect x="20" y="20" width="472" height="472" rx="112" fill="url(#bg)"/>
+  <path d="M136 98h36a12 12 0 0 1 12 12v292a12 12 0 0 1-12 12h-36a12 12 0 0 1-12-12V110a12 12 0 0 1 12-12Z" fill="#22D3EE" opacity=".35" filter="url(#glow)"/>
+  <path d="M142 100h34a12 12 0 0 1 12 12v276a12 12 0 0 1-12 12h-34a12 12 0 0 1-12-12V112a12 12 0 0 1 12-12Z" fill="url(#cyan)"/>
+  <path d="M294 103h47c10 0 15 11 8 19L255 238l99 118c7 8 2 19-8 19h-47c-5 0-9-2-12-6l-85-103v-57l82-100c3-4 6-6 10-6Z" fill="url(#violet)"/>
+  <path d="m207 220 54 0-36 44h-31v-24Z" fill="url(#pink)"/>
+  <g fill="#E9F9FF"><rect x="98" y="63" width="36" height="14" rx="4"/><rect x="151" y="63" width="36" height="14" rx="4" opacity=".82"/><rect x="204" y="63" width="36" height="14" rx="4" opacity=".64"/></g>
+  <path d="M99 432h314" stroke="#22D3EE" stroke-opacity=".42" stroke-width="3" stroke-linecap="round"/>
+</svg>
