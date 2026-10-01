@@ -172,7 +172,12 @@ class MainActivity : ComponentActivity() {
     private fun openSystemSettings(action: String) {
         val intent = when (action) {
             "home" -> Intent(Settings.ACTION_HOME_SETTINGS)
-            "sound" -> Intent(Settings.ACTION_SOUND_SETTINGS)
+            "sound" -> if (Build.VERSION.SDK_INT >= 29) Intent(Settings.Panel.ACTION_VOLUME) else Intent(Settings.ACTION_SOUND_SETTINGS)
+            "internet" -> if (Build.VERSION.SDK_INT >= 29) Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY) else Intent(Settings.ACTION_WIFI_SETTINGS)
+            "wifi" -> Intent(Settings.ACTION_WIFI_SETTINGS)
+            "bluetooth" -> if (Build.VERSION.SDK_INT >= 29) Intent(Settings.Panel.ACTION_BLUETOOTH) else Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+            "brightness" -> if (Build.VERSION.SDK_INT >= 29) Intent(Settings.Panel.ACTION_BRIGHTNESS) else Intent(Settings.ACTION_DISPLAY_SETTINGS)
+            "display" -> Intent(Settings.ACTION_DISPLAY_SETTINGS)
             else -> Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
         }
         try {
@@ -183,7 +188,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class FeatureAction { WALLPAPER, THEME, HOME, VOLUME, NOTIFICATIONS, MOTION }
+private enum class FeatureAction { WALLPAPER, THEME, HOME, VOLUME, NOTIFICATIONS, MOTION, CONTROL_CENTER }
 private data class Feature(val title: String, val subtitle: String, val icon: ImageVector, val accent: Color, val action: FeatureAction)
 
 @Composable
@@ -204,7 +209,8 @@ private fun KebTeeHome(
         Feature("Home Experience", "Open your home-screen settings", Icons.Default.Home, Pink, FeatureAction.HOME),
         Feature("Volume Lab", "Custom in-app audio sliders", Icons.Default.Tune, Cyan, FeatureAction.VOLUME),
         Feature("Notifications", "Manage KebTee notifications", Icons.Default.Notifications, Violet, FeatureAction.NOTIFICATIONS),
-        Feature("Effects & Motion", "Set a lighter visual experience", Icons.Default.Bolt, Pink, FeatureAction.MOTION)
+        Feature("Effects & Motion", "Set a lighter visual experience", Icons.Default.Bolt, Pink, FeatureAction.MOTION),
+        Feature("Control Center", "Fast access to system panels", Icons.Default.Tune, Green, FeatureAction.CONTROL_CENTER)
     )
 
     Surface(Modifier.fillMaxSize(), color = Night) {
@@ -284,7 +290,7 @@ private fun KebTeeHome(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("CUSTOMIZATION LABS", fontSize = 11.sp, letterSpacing = 1.8.sp, color = Color(0xFF98A6C8), fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                Text("6 TOOLS", fontSize = 10.sp, color = Muted)
+                Text("7 TOOLS", fontSize = 10.sp, color = Muted)
             }
             Spacer(Modifier.height(12.dp))
             LazyVerticalGrid(
@@ -474,6 +480,17 @@ private fun FeatureDialog(
                             Text("Reduced-motion preview", Modifier.weight(1f), color = Color.White)
                             Switch(checked = reduceMotion, onCheckedChange = onReduceMotionChange)
                         }
+                    }
+                    FeatureAction.CONTROL_CENTER -> {
+                        Text(
+                            "A KebTee quick-access hub for Android's native control panels. These shortcuts open the real system controls; Android still owns the notification shade and Quick Settings.",
+                            color = Muted, fontSize = 12.sp, lineHeight = 17.sp
+                        )
+                        Button(onClick = { onOpenSystemSettings("internet") }, modifier = Modifier.fillMaxWidth()) { Text("Internet & Wi-Fi") }
+                        OutlinedButton(onClick = { onOpenSystemSettings("bluetooth") }, modifier = Modifier.fillMaxWidth()) { Text("Bluetooth") }
+                        OutlinedButton(onClick = { onOpenSystemSettings("brightness") }, modifier = Modifier.fillMaxWidth()) { Text("Brightness & display") }
+                        OutlinedButton(onClick = { onOpenSystemSettings("sound") }, modifier = Modifier.fillMaxWidth()) { Text("System volume panel") }
+                        OutlinedButton(onClick = { onOpenSystemSettings("notifications") }, modifier = Modifier.fillMaxWidth()) { Text("Notification controls") }
                     }
                     FeatureAction.WALLPAPER -> Text("Open the Android live wallpaper picker.")
                 }
