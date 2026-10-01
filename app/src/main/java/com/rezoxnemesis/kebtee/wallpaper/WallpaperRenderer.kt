@@ -180,8 +180,8 @@ class WallpaperRenderer {
         paint.color = withAlpha(scene.palette.secondary, 0.45f)
         canvas.drawCircle(cx, cy, orbitRadius, paint)
         paint.style = Paint.Style.FILL
-        val px = cx + cos(angle) * orbitRadius
-        val py = cy + sin(angle) * orbitRadius
+        val px = cx + cos(angle.toDouble()).toFloat() * orbitRadius
+        val py = cy + sin(angle.toDouble()).toFloat() * orbitRadius
         paint.color = scene.palette.accent
         canvas.drawCircle(cx, cy, base * 0.06f, paint)
         paint.color = withAlpha(scene.palette.secondary, 0.95f)
