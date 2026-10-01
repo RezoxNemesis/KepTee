@@ -73,6 +73,9 @@ class MainActivity : ComponentActivity() {
     private val notificationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
         openSystemSettings("notifications")
     }
+    private val testNotificationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) showTestNotification()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -99,6 +102,7 @@ class MainActivity : ComponentActivity() {
                         preferences.edit().putString("accent", preferenceForAccent(it)).apply()
                     },
                     onLiveWallpaper = { openWallpaperPicker() },
+                    onTestNotification = { showTestNotification() },
                     onOpenSystemSettings = { action ->
                         if (action == "notifications") openNotificationControls() else openSystemSettings(action)
                     }
@@ -128,6 +132,23 @@ class MainActivity : ComponentActivity() {
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         else openSystemSettings("notifications")
+    }
+
+    private fun showTestNotification() {
+        createNotificationChannel()
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            testNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            return
+        }
+        val notification = android.app.Notification.Builder(this, "kebtee_updates")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("KebTee notification test")
+            .setContentText("Notifications are working on this device.")
+            .setAutoCancel(true)
+            .build()
+        getSystemService(NotificationManager::class.java).notify(1001, notification)
     }
 
     private fun createNotificationChannel() {
@@ -163,6 +184,7 @@ private fun KebTeeHome(
     onReduceMotionChange: (Boolean) -> Unit,
     onAccentChange: (Color) -> Unit,
     onLiveWallpaper: () -> Unit,
+    onTestNotification: () -> Unit,
     onOpenSystemSettings: (String) -> Unit
 ) {
     var selectedFeature by remember { mutableStateOf<Feature?>(null) }
@@ -270,7 +292,7 @@ private fun KebTeeHome(
 
     selectedFeature?.let { feature ->
         FeatureDialog(
-            feature, accent, reduceMotion, audioManager, onReduceMotionChange, onAccentChange, onOpenSystemSettings,
+            feature, accent, reduceMotion, audioManager, onReduceMotionChange, onAccentChange, onOpenSystemSettings, onTestNotification,
             { selectedFeature = null }
         )
     }
@@ -345,6 +367,7 @@ private fun FeatureDialog(
     onReduceMotionChange: (Boolean) -> Unit,
     onAccentChange: (Color) -> Unit,
     onOpenSystemSettings: (String) -> Unit,
+    onTestNotification: () -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
@@ -421,8 +444,15 @@ private fun FeatureDialog(
                         Text("Note: some Android versions merge ring and notification volume.", color = Muted, fontSize = 11.sp)
                     }
                     FeatureAction.NOTIFICATIONS -> {
-                        Text("Enable Android's notification permission for KebTee, then review the app-specific notification controls. Android may still restrict some settings on your device.")
-                        Button(onClick = { onOpenSystemSettings("notifications"); onDismiss() }, modifier = Modifier.fillMaxWidth()) { Text("Enable notifications") }
+                        Text("Send a real test notification to verify KebTee's notification channel, or open Android settings to adjust permission and alerts.")
+                        Button(
+                            onClick = { onTestNotification(); onDismiss() },
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("Send test notification") }
+                        OutlinedButton(
+                            onClick = { onOpenSystemSettings("notifications"); onDismiss() },
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("Notification settings") }
                     }
                     FeatureAction.MOTION -> {
                         Text("Reduce visual motion in KebTee's preview. The live wallpaper service also pauses drawing when it isn't visible.")
