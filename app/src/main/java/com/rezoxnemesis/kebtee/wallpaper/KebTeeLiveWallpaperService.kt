@@ -7,7 +7,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Shader
 import android.os.Handler
-import android.os.Looper
+import android.os.HandlerThread
 import android.os.SystemClock
 import android.service.wallpaper.WallpaperService
 import android.view.SurfaceHolder
@@ -19,8 +19,9 @@ class KebTeeLiveWallpaperService : WallpaperService() {
     override fun onCreateEngine(): Engine = AuroraEngine()
 
     private inner class AuroraEngine : Engine() {
-        private val handler = Handler(Looper.getMainLooper())
-        private var visible = false
+        private val renderThread = HandlerThread("KebTeeAuroraRenderer").apply { start() }
+        private val handler = Handler(renderThread.looper)
+        @Volatile private var visible = false
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         private val startedAt = SystemClock.uptimeMillis()
 
@@ -35,12 +36,20 @@ class KebTeeLiveWallpaperService : WallpaperService() {
 
         override fun onVisibilityChanged(isVisible: Boolean) {
             visible = isVisible
-            if (visible) drawFrame.run() else handler.removeCallbacks(drawFrame)
+            if (visible) {
+                handler.removeCallbacks(drawFrame)
+                handler.post(drawFrame)
+            } else {
+                handler.removeCallbacks(drawFrame)
+            }
         }
 
         override fun onSurfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
             super.onSurfaceChanged(holder, format, width, height)
-            if (visible) drawFrame.run()
+            if (visible) {
+                handler.removeCallbacks(drawFrame)
+                handler.post(drawFrame)
+            }
         }
 
         override fun onSurfaceDestroyed(holder: SurfaceHolder) {
@@ -52,6 +61,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         override fun onDestroy() {
             visible = false
             handler.removeCallbacks(drawFrame)
+            renderThread.quitSafely()
             super.onDestroy()
         }
 
