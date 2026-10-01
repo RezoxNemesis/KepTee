@@ -151,7 +151,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
                         val phase = i * 12.9898f
                         val sx = ((i * 73.7f) % w + sin((t * 0.12f + phase).toDouble()).toFloat() * 14f + w) % w
                         val sy = (i * 131.3f) % h
-                        val twinkle = if (reduceMotion) 0.5f else (0.5f + 0.5f * sin(t * 1.7f + phase)).toFloat()
+                        val twinkle = if (reduceMotion) 0.5f else (0.5f + 0.5f * sin((t * 1.7f + phase).toDouble()).toFloat()).toFloat()
                         val alpha = (65f + twinkle * 155f).toInt().coerceIn(0, 220)
                         paint.color = Color.argb(alpha, 205, 230, 255)
                         canvas.drawCircle(sx, sy, if (i % 7 == 0) 2.2f else 1.1f, paint)
