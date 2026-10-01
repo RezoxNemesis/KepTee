@@ -2,14 +2,20 @@ workflows:
   keptee-android-debug:
     name: KepTee Android Debug APK
     max_build_duration: 60
-    instance_type: linux_x2
+    instance_type: mac_mini_m2
     environment:
       java: 17
     scripts:
-      - name: Verify Java and Gradle
+      - name: Verify Java, Gradle, and Android SDK
         script: |
           java -version
           gradle --version
+          echo "ANDROID_HOME=${ANDROID_HOME:-}"
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-}"
+          if [ -z "${ANDROID_HOME:-}" ] && [ -z "${ANDROID_SDK_ROOT:-}" ]; then
+            echo "Android SDK environment variable is missing on this runner."
+            exit 1
+          fi
       - name: Build debug APK, unit tests, and lint
         script: |
           gradle --no-daemon clean assembleDebug testDebugUnitTest lintDebug
