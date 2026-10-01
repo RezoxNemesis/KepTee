@@ -6,6 +6,7 @@ import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Shader
+import android.content.SharedPreferences
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.SystemClock
@@ -22,6 +23,14 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         private val renderThread = HandlerThread("KebTeeAuroraRenderer").apply { start() }
         private val handler = Handler(renderThread.looper)
         @Volatile private var visible = false
+        private val preferences = getSharedPreferences("kebtee_preferences", MODE_PRIVATE)
+        @Volatile private var reduceMotion = preferences.getBoolean("reduce_motion", false)
+        private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "reduce_motion") {
+                reduceMotion = preferences.getBoolean("reduce_motion", false)
+                if (visible) { handler.removeCallbacks(drawFrame); handler.post(drawFrame) }
+            }
+        }
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         private val startedAt = SystemClock.uptimeMillis()
 
@@ -30,8 +39,13 @@ class KebTeeLiveWallpaperService : WallpaperService() {
                 if (!visible) return
                 drawScene()
                 handler.removeCallbacks(this)
-                handler.postDelayed(this, 40L)
+                if (visible && !reduceMotion) handler.postDelayed(this, 40L)
             }
+        }
+
+        override fun onCreate(surfaceHolder: SurfaceHolder) {
+            super.onCreate(surfaceHolder)
+            preferences.registerOnSharedPreferenceChangeListener(preferenceListener)
         }
 
         override fun onVisibilityChanged(isVisible: Boolean) {
@@ -61,6 +75,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         override fun onDestroy() {
             visible = false
             handler.removeCallbacks(drawFrame)
+            preferences.unregisterOnSharedPreferenceChangeListener(preferenceListener)
             renderThread.quitSafely()
             super.onDestroy()
         }
@@ -73,7 +88,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
                     val w = canvas.width.toFloat()
                     val h = canvas.height.toFloat()
                     if (w <= 0f || h <= 0f) return
-                    val t = (SystemClock.uptimeMillis() - startedAt) / 1000f
+                    val t = if (reduceMotion) 0f else (SystemClock.uptimeMillis() - startedAt) / 1000f
 
                     paint.shader = LinearGradient(
                         0f, 0f, w, h,

@@ -1,11 +1,17 @@
 package com.rezoxnemesis.kebtee
 
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.WallpaperManager
 import android.content.ComponentName
 import android.content.Intent
 import android.provider.Settings
+import android.os.Build
 import android.os.Bundle
+import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -60,6 +66,10 @@ internal fun preferenceForAccent(color: Color): String = when (color) {
 }
 
 class MainActivity : ComponentActivity() {
+    private val notificationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        openSystemSettings("notifications")
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.statusBarColor = android.graphics.Color.rgb(7, 11, 24)
@@ -83,7 +93,9 @@ class MainActivity : ComponentActivity() {
                         preferences.edit().putString("accent", preferenceForAccent(it)).apply()
                     },
                     onLiveWallpaper = { openWallpaperPicker() },
-                    onOpenSystemSettings = { action -> openSystemSettings(action) }
+                    onOpenSystemSettings = { action ->
+                        if (action == "notifications") openNotificationControls() else openSystemSettings(action)
+                    }
                 )
             }
         }
@@ -101,6 +113,22 @@ class MainActivity : ComponentActivity() {
             } catch (_: Exception) {
                 startActivity(Intent(Settings.ACTION_DISPLAY_SETTINGS))
             }
+        }
+    }
+
+    private fun openNotificationControls() {
+        createNotificationChannel()
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        else openSystemSettings("notifications")
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel("kebtee_updates", "KebTee updates", NotificationManager.IMPORTANCE_DEFAULT)
+                .apply { description = "Optional updates from KebTee." }
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
 
@@ -207,7 +235,7 @@ private fun KebTeeHome(
                         ) {
                             Icon(Icons.Default.Brush, contentDescription = null)
                             Spacer(Modifier.width(9.dp))
-                            Text("Preview & Apply Wallpaper", fontWeight = FontWeight.Bold)
+                            Text("Choose & Apply Wallpaper", fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -327,8 +355,8 @@ private fun FeatureDialog(
                         Button(onClick = { onOpenSystemSettings("sound"); onDismiss() }, modifier = Modifier.fillMaxWidth()) { Text("Open sound settings") }
                     }
                     FeatureAction.NOTIFICATIONS -> {
-                        Text("Notification appearance and permission are managed by Android. Open KebTee's app notification settings to review the available controls.")
-                        Button(onClick = { onOpenSystemSettings("notifications"); onDismiss() }, modifier = Modifier.fillMaxWidth()) { Text("Open notification settings") }
+                        Text("Enable Android's notification permission for KebTee, then review the app-specific notification controls. Android may still restrict some settings on your device.")
+                        Button(onClick = { onOpenSystemSettings("notifications"); onDismiss() }, modifier = Modifier.fillMaxWidth()) { Text("Enable notifications") }
                     }
                     FeatureAction.MOTION -> {
                         Text("Reduce visual motion in KebTee's preview. The live wallpaper service also pauses drawing when it isn't visible.")
