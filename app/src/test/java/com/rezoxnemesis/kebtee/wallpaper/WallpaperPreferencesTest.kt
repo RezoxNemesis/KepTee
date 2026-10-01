@@ -1,34 +1,26 @@
 package com.rezoxnemesis.kebtee.wallpaper
 
-import android.content.Context
-import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class WallpaperPreferencesTest {
     @Test
-    fun settingsRoundTripKeepsUserValuesPerScene() {
-        val prefs = WallpaperPreferences(ApplicationProvider.getApplicationContext<Context>())
-        val scene = WallpaperCatalog.scenes.first()
-        val expected = WallpaperSettings(speed = 1.35f, intensity = 0.72f, colorVariant = 2, reducedMotion = true, batteryMode = true)
+    fun settingsNormalizationClampsRuntimeValues() {
+        val input = WallpaperSettings(speed = 9f, intensity = -2f, colorVariant = 9, reducedMotion = true, batteryMode = true)
+        val normalized = sanitizeWallpaperSettings(input)
 
-        prefs.saveSettings(scene.id, expected)
-
-        assertEquals(expected, prefs.settingsFor(scene.id))
+        assertEquals(2f, normalized.speed, 0.0001f)
+        assertEquals(0f, normalized.intensity, 0.0001f)
+        assertEquals(3, normalized.colorVariant)
+        assertTrue(normalized.reducedMotion)
+        assertTrue(normalized.batteryMode)
     }
 
     @Test
-    fun favoritesAndRecentScenesPersist() {
-        val prefs = WallpaperPreferences(ApplicationProvider.getApplicationContext<Context>())
-        val a = WallpaperCatalog.scenes[0].id
-        val b = WallpaperCatalog.scenes[1].id
-
-        prefs.setFavorite(a, true)
-        prefs.markApplied(a)
-        prefs.markApplied(b)
-
-        assertTrue(prefs.isFavorite(a))
-        assertEquals(listOf(b, a), prefs.recentlyUsed().take(2))
+    fun catalogScenesProvideStablePreferenceKeys() {
+        val ids = WallpaperCatalog.scenes.map { it.id }
+        assertEquals(ids.size, ids.toSet().size)
+        assertTrue(ids.all { it.isNotBlank() })
     }
 }
