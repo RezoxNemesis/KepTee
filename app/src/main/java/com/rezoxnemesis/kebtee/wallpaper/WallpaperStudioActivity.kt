@@ -1,6 +1,8 @@
 package com.rezoxnemesis.kebtee.wallpaper
 
 import android.app.WallpaperManager
+import android.graphics.Bitmap
+import android.graphics.Canvas as AndroidCanvas
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
@@ -12,7 +14,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -51,19 +53,26 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rezoxnemesis.kebtee.ui.designsystem.KebTeeTheme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import android.os.SystemClock
 
 class WallpaperStudioActivity : ComponentActivity() {
     private val preferences by lazy { WallpaperPreferences(this) }
@@ -87,7 +96,7 @@ class WallpaperStudioActivity : ComponentActivity() {
         val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).apply {
             putExtra(
                 WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
-                ComponentName(this, KebTeeLiveWallpaperService::class.java)
+                ComponentName(this@WallpaperStudioActivity, KebTeeLiveWallpaperService::class.java)
             )
         }
         runCatching { startActivity(intent) }
@@ -281,14 +290,31 @@ private fun SettingPill(text: String) {
 }
 
 @Composable
-private fun StaticWallpaperPreview(scene: WallpaperScene, modifier: Modifier = Modifier) {
-    Canvas(modifier.background(Color.Black)) {
-        WallpaperRenderer().draw(
-            drawContext.canvas.nativeCanvas,
-            scene,
-            WallpaperRenderState(size.width.toInt(), size.height.toInt(), timeSeconds = 4f, speed = 1f, intensity = 1f)
-        )
+private fun StaticWallpaperPreview(
+    scene: WallpaperScene,
+    modifier: Modifier = Modifier
+) {
+    val bitmap = remember(scene.id) {
+        Bitmap.createBitmap(720, 480, Bitmap.Config.ARGB_8888).also {
+            WallpaperRenderer().draw(
+                AndroidCanvas(it),
+                scene,
+                WallpaperRenderState(
+                    width = 720,
+                    height = 480,
+                    timeSeconds = 4f,
+                    speed = 1f,
+                    intensity = 1f
+                )
+            )
+        }
     }
+    Image(
+        bitmap = bitmap.asImageBitmap(),
+        contentDescription = scene.title,
+        modifier = modifier.background(Color.Black),
+        contentScale = ContentScale.Crop
+    )
 }
 
 @Composable
@@ -299,33 +325,45 @@ private fun AnimatedWallpaperPreview(
     batteryMode: Boolean,
     reducedMotion: Boolean
 ) {
-    val transition = rememberInfiniteTransition(label = "wallpaper-preview")
-    val progress by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(10000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "wallpaper-progress"
-    )
-    val safeProgress = if (reducedMotion) 0f else progress
-
-    Card(colors = CardDefaults.cardColors(containerColor = Color.Black), shape = RoundedCornerShape(24.dp)) {
-        Canvas(Modifier.fillMaxWidth().height(230.dp)) {
-            WallpaperRenderer().draw(
-                drawContext.canvas.nativeCanvas,
+    val bitmap = remember(scene.id) {
+        Bitmap.createBitmap(720, 405, Bitmap.Config.ARGB_8888)
+    }
+    val tick = remember { mutableIntStateOf(0) }
+    LaunchedEffect(scene.id, speed, intensity, batteryMode, reducedMotion) {
+        val renderer = WallpaperRenderer()
+        val startedAt = SystemClock.uptimeMillis()
+        while (isActive) {
+            val elapsed = (SystemClock.uptimeMillis() - startedAt) / 1000f
+            renderer.draw(
+                AndroidCanvas(bitmap),
                 scene,
                 WallpaperRenderState(
-                    width = size.width.toInt(),
-                    height = size.height.toInt(),
-                    timeSeconds = safeProgress * 10f,
+                    width = bitmap.width,
+                    height = bitmap.height,
+                    timeSeconds = elapsed,
                     speed = speed,
                     intensity = intensity,
                     reducedMotion = reducedMotion,
                     batteryMode = batteryMode
                 )
             )
+            tick.intValue++
+            if (reducedMotion) break
+            delay(if (batteryMode) 66L else 50L)
         }
+    }
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Color.Black),
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = scene.title,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(230.dp),
+            contentScale = ContentScale.Crop
+        )
     }
 }
