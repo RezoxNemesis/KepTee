@@ -16,9 +16,9 @@ concurrency:
 
 jobs:
   verify:
-    name: Build, unit tests and lint
+    name: Build, unit tests, lint and startup smoke tests
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -55,6 +55,14 @@ jobs:
         run: gradle --no-daemon testDebugUnitTest
       - name: Run Android lint
         run: gradle --no-daemon lintDebug
+      - name: Launch activities in Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: gradle --no-daemon connectedDebugAndroidTest
       - name: Upload debug APK
         if: success()
         uses: actions/upload-artifact@v4
