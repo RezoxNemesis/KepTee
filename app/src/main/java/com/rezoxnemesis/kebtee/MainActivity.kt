@@ -57,6 +57,8 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import com.rezoxnemesis.kebtee.wallpaper.KebTeeLiveWallpaperService
 import com.rezoxnemesis.kebtee.wallpaper.WallpaperStudioActivity
+import com.rezoxnemesis.kebtee.notifications.NotificationFeedStore
+import androidx.compose.ui.platform.LocalContext
 
 private val Night = Color(0xFF070B18)
 private val Panel = Color(0xFF11182B)
@@ -179,6 +181,7 @@ class MainActivity : ComponentActivity() {
             "bluetooth" -> Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
             "brightness" -> Intent(Settings.ACTION_DISPLAY_SETTINGS)
             "display" -> Intent(Settings.ACTION_DISPLAY_SETTINGS)
+            "notification_listener" -> Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
             else -> Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
         }
         try {
@@ -466,15 +469,42 @@ private fun FeatureDialog(
                         Text("Note: some Android versions merge ring and notification volume.", color = Muted, fontSize = 11.sp)
                     }
                     FeatureAction.NOTIFICATIONS -> {
-                        Text("Send a real test notification to verify KebTee's notification channel, or open Android settings to adjust permission and alerts.")
-                        Button(
-                            onClick = { onTestNotification(); onDismiss() },
-                            modifier = Modifier.fillMaxWidth()
-                        ) { Text("Send test notification") }
-                        OutlinedButton(
-                            onClick = { onOpenSystemSettings("notifications"); onDismiss() },
-                            modifier = Modifier.fillMaxWidth()
-                        ) { Text("Notification settings") }
+                        val context = LocalContext.current
+                        val feed = remember(feature.action) { NotificationFeedStore.list(context).take(8) }
+                        Text(
+                            "KebTee can send its own notifications or, after explicit Android Notification Access permission, show a local feed of recent notifications. The system notification shade remains owned by Android.",
+                            color = Muted, fontSize = 12.sp, lineHeight = 17.sp
+                        )
+                        Button(onClick = { onTestNotification(); onDismiss() }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Send test notification")
+                        }
+                        OutlinedButton(onClick = { onOpenSystemSettings("notifications"); onDismiss() }, modifier = Modifier.fillMaxWidth()) {
+                            Text("App notification settings")
+                        }
+                        OutlinedButton(onClick = { onOpenSystemSettings("notification_listener"); onDismiss() }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Enable notification access")
+                        }
+                        if (feed.isNotEmpty()) {
+                            Text("Recent notifications", color = Color.White, fontWeight = FontWeight.SemiBold)
+                            feed.forEach { item ->
+                                Surface(
+                                    Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = Color(0xFF1A2439),
+                                    border = BorderStroke(1.dp, Color(0xFF2B3854))
+                                ) {
+                                    Column(Modifier.padding(11.dp)) {
+                                        Text(item.appLabel, color = Cyan, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        Text(item.title.ifBlank { "Notification" }, color = Color.White, fontWeight = FontWeight.Medium)
+                                        if (item.text.isNotBlank()) {
+                                            Text(item.text, color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            Text("No listener-feed items yet. Enable notification access, then reopen this panel after notifications arrive.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
+                        }
                     }
                     FeatureAction.MOTION -> {
                         Text("Reduce visual motion in KebTee's preview. The live wallpaper service also pauses drawing when it isn't visible.")
