@@ -62,7 +62,26 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: true
-          script: gradle --no-daemon connectedDebugAndroidTest
+          script: |
+            mkdir -p app/build/diagnostics
+            adb logcat -c
+            set +e
+            gradle --no-daemon connectedDebugAndroidTest
+            test_exit=$?
+            adb logcat -d -v threadtime > app/build/diagnostics/emulator-logcat.txt 2>&1
+            echo "$test_exit" > app/build/diagnostics/connected-test-exit-code.txt
+            exit "$test_exit"
+      - name: Upload emulator diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kebtee-emulator-diagnostics
+          path: |
+            app/build/diagnostics/**
+            app/build/reports/androidTests/connected/debug/**
+            app/build/outputs/androidTest-results/connected/**
+          if-no-files-found: warn
+          retention-days: 14
       - name: Upload debug APK
         if: success()
         uses: actions/upload-artifact@v4
