@@ -32,12 +32,13 @@ class WallpaperPreferences(context: Context) {
 
     fun saveSettings(sceneId: String, settings: WallpaperSettings) {
         val safe = WallpaperCatalog.byId(sceneId)?.id ?: WallpaperCatalog.scenes.first().id
+        val normalized = sanitizeWallpaperSettings(settings)
         prefs.edit()
-            .putFloat("$safe.speed", settings.speed.coerceIn(0.15f, 2f))
-            .putFloat("$safe.intensity", settings.intensity.coerceIn(0f, 1.25f))
-            .putInt("$safe.color", settings.colorVariant)
-            .putBoolean("$safe.reduced", settings.reducedMotion)
-            .putBoolean("$safe.battery", settings.batteryMode)
+            .putFloat("$safe.speed", normalized.speed)
+            .putFloat("$safe.intensity", normalized.intensity)
+            .putInt("$safe.color", normalized.colorVariant)
+            .putBoolean("$safe.reduced", normalized.reducedMotion)
+            .putBoolean("$safe.battery", normalized.batteryMode)
             .apply()
     }
 
@@ -65,3 +66,4 @@ class WallpaperPreferences(context: Context) {
         const val KEY_RECENTS = "recently_used"
     }
 }
+\ninternal fun sanitizeWallpaperSettings(settings: WallpaperSettings): WallpaperSettings = settings.copy(\n    speed = settings.speed.coerceIn(0.15f, 2f),\n    intensity = settings.intensity.coerceIn(0f, 1.25f),\n    colorVariant = settings.colorVariant.coerceIn(0, 3)\n)\n
