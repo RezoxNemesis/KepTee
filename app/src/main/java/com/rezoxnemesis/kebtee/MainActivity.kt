@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import com.rezoxnemesis.kebtee.wallpaper.KebTeeLiveWallpaperService
+import com.rezoxnemesis.kebtee.wallpaper.WallpaperStudioActivity
 
 private val Night = Color(0xFF070B18)
 private val Panel = Color(0xFF11182B)
@@ -111,7 +112,7 @@ class MainActivity : ComponentActivity() {
                         accent = it
                         preferences.edit().putString("accent", preferenceForAccent(it)).apply()
                     },
-                    onLiveWallpaper = { openWallpaperPicker() },
+                    onLiveWallpaper = { startActivity(Intent(this@MainActivity, WallpaperStudioActivity::class.java)) },
                     onTestNotification = { showTestNotification() },
                     onOpenSystemSettings = { action ->
                         if (action == "notifications") openNotificationControls() else openSystemSettings(action)
