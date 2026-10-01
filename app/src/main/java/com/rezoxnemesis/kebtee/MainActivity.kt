@@ -294,7 +294,8 @@ private fun KebTeeHome(
             }
             Spacer(Modifier.height(12.dp))
             LazyVerticalGrid(
-                columns = GridCells.Fixed(2), verticalArrangement = Arrangement.spacedBy(12.dp),
+                columns = GridCells.Fixed(2), modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 22.dp)
             ) {
                 items(features) { feature ->
