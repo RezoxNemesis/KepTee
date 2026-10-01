@@ -17,6 +17,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -41,6 +42,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush as UiBrush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -256,7 +266,7 @@ private fun KebTeeHome(
                         Spacer(Modifier.height(18.dp))
                         SilhouettePreview(reduceMotion)
                         Spacer(Modifier.height(15.dp))
-                        Text("A luminous monochrome figure with a seamless breathing glow and traveling light sweep.", fontSize = 13.sp, lineHeight = 18.sp, color = Color(0xFFD8E0F5))
+                        Text("The exact monochrome reference artwork, animated with a subtle continuous breathing pulse.", fontSize = 13.sp, lineHeight = 18.sp, color = Color(0xFFD8E0F5))
                         Spacer(Modifier.height(17.dp))
                         Button(
                             onClick = onLiveWallpaper, modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -300,40 +310,44 @@ private fun KebTeeHome(
 
 @Composable
 private fun SilhouettePreview(reduceMotion: Boolean) {
-    val glow = if (reduceMotion) 0.52f else 0.9f
+    val transition = rememberInfiniteTransition(label = "silhouette-preview")
+    val animatedScale by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.025f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "silhouette-scale"
+    )
+    val animatedAlpha by transition.animateFloat(
+        initialValue = 0.84f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "silhouette-glow"
+    )
     Box(
-        Modifier.fillMaxWidth().height(104.dp)
+        Modifier.fillMaxWidth().height(144.dp)
             .background(Color.Black, RoundedCornerShape(18.dp))
     ) {
-        // Small scalable preview of the monochrome T-pose used by the live wallpaper.
-        Box(
-            Modifier.align(Alignment.Center).offset(y = (-30).dp).size(9.dp)
-                .background(Color.White.copy(alpha = glow), CircleShape)
+        Image(
+            painter = painterResource(id = R.drawable.kebtee_silhouette),
+            contentDescription = "KebTee monochrome silhouette reference wallpaper",
+            modifier = Modifier.align(Alignment.Center).fillMaxHeight().graphicsLayer(
+                scaleX = if (reduceMotion) 1f else animatedScale,
+                scaleY = if (reduceMotion) 1f else animatedScale
+            ),
+            contentScale = ContentScale.Fit,
+            alpha = if (reduceMotion) 1f else animatedAlpha
         )
-        Box(
-            Modifier.align(Alignment.Center).offset(y = (-20).dp).width(5.dp).height(13.dp)
-                .background(Color.White.copy(alpha = glow), RoundedCornerShape(3.dp))
-        )
-        Box(
-            Modifier.align(Alignment.Center).offset(y = (-9).dp).width(116.dp).height(4.dp)
-                .background(Color.White.copy(alpha = glow), RoundedCornerShape(4.dp))
-        )
-        Box(
-            Modifier.align(Alignment.Center).offset(y = (1).dp).width(22.dp).height(29.dp)
-                .background(Color.White.copy(alpha = glow), RoundedCornerShape(8.dp))
-        )
-        Box(
-            Modifier.align(Alignment.Center).offset(x = (-6).dp, y = (25).dp).width(6.dp).height(24.dp)
-                .background(Color.White.copy(alpha = glow * 0.65f), RoundedCornerShape(4.dp))
-        )
-        Box(
-            Modifier.align(Alignment.Center).offset(x = (6).dp, y = (25).dp).width(6.dp).height(24.dp)
-                .background(Color.White.copy(alpha = glow * 0.65f), RoundedCornerShape(4.dp))
-        )
-        if (!reduceMotion) {
-            Box(
-                Modifier.align(Alignment.Center).offset(y = (-9).dp).width(140.dp).height(1.dp)
-                    .background(UiBrush.horizontalGradient(listOf(Color.Transparent, Color.White.copy(alpha = 0.75f), Color.Transparent)))
+        if (reduceMotion) {
+            Text(
+                "REDUCED MOTION",
+                Modifier.align(Alignment.TopStart).padding(10.dp),
+                color = Color(0xFFB8C8E9), fontSize = 8.sp, letterSpacing = 1.4.sp
             )
         }
     }
