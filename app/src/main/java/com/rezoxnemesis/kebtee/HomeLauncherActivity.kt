@@ -32,6 +32,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private data class HomeApp(val label: String, val packageName: String, val className: String, val icon: Bitmap) {
     val key: String get() = "$packageName/$className"
@@ -42,34 +47,37 @@ class HomeLauncherActivity : ComponentActivity() {
     private val panel = Color(0xFF121A2D)
     private var installedApps by mutableStateOf<List<HomeApp>>(emptyList())
     private var launcherAccent by mutableStateOf(Color(0xFF22D3EE))
+    private var appsLoadJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.statusBarColor = android.graphics.Color.rgb(7, 11, 24)
         window.navigationBarColor = android.graphics.Color.rgb(7, 11, 24)
-        installedApps = loadApps()
         launcherAccent = accentFromPreference(getSharedPreferences("kebtee_preferences", MODE_PRIVATE).getString("accent", "violet"))
-        val apps = installedApps
         val launcherPreferences = getSharedPreferences("kebtee_launcher", MODE_PRIVATE)
-        val defaultFavorites = apps.filter { app ->
-            listOf("phone", "camera", "chrome", "messages", "settings").any { keyword ->
-                app.label.contains(keyword, ignoreCase = true)
-            }
-        }.take(5).ifEmpty { apps.take(5) }.map { it.key }.toSet()
-        val savedFavorites = launcherPreferences.getStringSet("favorites", null)?.toSet()
-        val initialFavorites = savedFavorites ?: defaultFavorites
-        if (savedFavorites == null) launcherPreferences.edit().putStringSet("favorites", initialFavorites).apply()
 
         setContent {
             val apps = installedApps
+            var favoriteKeys by remember { mutableStateOf(launcherPreferences.getStringSet("favorites", null)?.toSet()) }
+            LaunchedEffect(apps) {
+                if (apps.isNotEmpty() && favoriteKeys == null) {
+                    val defaults = apps.filter { app ->
+                        listOf("phone", "camera", "chrome", "messages", "settings").any { keyword ->
+                            app.label.contains(keyword, ignoreCase = true)
+                        }
+                    }.take(5).ifEmpty { apps.take(5) }.map { it.key }.toSet()
+                    favoriteKeys = defaults
+                    launcherPreferences.edit().putStringSet("favorites", defaults).apply()
+                }
+            }
+            val activeFavoriteKeys = favoriteKeys ?: emptySet()
             val cyan = launcherAccent
             var search by remember { mutableStateOf("") }
             var showAllApps by remember { mutableStateOf(false) }
-            var favoriteKeys by remember { mutableStateOf(initialFavorites) }
             val filtered = remember(search, apps) {
                 if (search.isBlank()) apps else apps.filter { it.label.contains(search.trim(), ignoreCase = true) }
             }
-            val favorites = remember(favoriteKeys, apps) { apps.filter { it.key in favoriteKeys } }
+            val favorites = remember(activeFavoriteKeys, apps) { apps.filter { it.key in activeFavoriteKeys } }
 
             BackHandler(enabled = showAllApps) { showAllApps = false }
             MaterialTheme(colorScheme = darkColorScheme(primary = cyan, secondary = cyan, background = night, surface = panel)) {
@@ -120,10 +128,10 @@ class HomeLauncherActivity : ComponentActivity() {
                             ) {
                                 items(filtered, key = { it.key }) { app ->
                                     AppTile(
-                                        app = app, pinned = app.key in favoriteKeys, cyan = cyan,
+                                        app = app, pinned = app.key in activeFavoriteKeys, cyan = cyan,
                                         onOpen = { launchApp(app) },
                                         onTogglePin = {
-                                            val updated = if (app.key in favoriteKeys) favoriteKeys - app.key else favoriteKeys + app.key
+                                            val updated = if (app.key in activeFavoriteKeys) activeFavoriteKeys - app.key else activeFavoriteKeys + app.key
                                             favoriteKeys = updated
                                             launcherPreferences.edit().putStringSet("favorites", updated).apply()
                                         }
@@ -157,7 +165,7 @@ class HomeLauncherActivity : ComponentActivity() {
                                         app = app, pinned = true, cyan = cyan,
                                         onOpen = { launchApp(app) },
                                         onTogglePin = {
-                                            val updated = favoriteKeys - app.key
+                                            val updated = activeFavoriteKeys - app.key
                                             favoriteKeys = updated
                                             launcherPreferences.edit().putStringSet("favorites", updated).apply()
                                         }
@@ -181,8 +189,23 @@ class HomeLauncherActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (installedApps.isNotEmpty()) installedApps = loadApps()
         launcherAccent = accentFromPreference(getSharedPreferences("kebtee_preferences", MODE_PRIVATE).getString("accent", "violet"))
+        refreshInstalledApps()
+    }
+
+    override fun onDestroy() {
+        appsLoadJob?.cancel()
+        super.onDestroy()
+    }
+
+    private fun refreshInstalledApps() {
+        appsLoadJob?.cancel()
+        appsLoadJob = lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching { loadApps() }.getOrElse { emptyList() }
+            }
+            installedApps = result
+        }
     }
 
     @Composable
@@ -214,7 +237,7 @@ class HomeLauncherActivity : ComponentActivity() {
         return packageManager.queryIntentActivities(query, PackageManager.MATCH_ALL).mapNotNull { info ->
             val activity = info.activityInfo ?: return@mapNotNull null
             try {
-                HomeApp(info.loadLabel(packageManager).toString(), activity.packageName, activity.name, info.loadIcon(packageManager).toBitmap(96, 96))
+                HomeApp(info.loadLabel(packageManager).toString(), activity.packageName, activity.name, info.loadIcon(packageManager).toBitmap(72, 72))
             } catch (_: Exception) { null }
         }.distinctBy { it.key }.sortedBy { it.label.lowercase() }
     }
