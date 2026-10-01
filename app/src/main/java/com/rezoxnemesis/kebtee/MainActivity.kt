@@ -219,15 +219,15 @@ private fun KebTeeHome(
                             }
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text("AURORA / 001", fontSize = 10.sp, letterSpacing = 2.sp, color = Cyan, fontWeight = FontWeight.Bold)
-                                Text("KebTee Aurora", fontSize = 21.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("MONOCHROME / 001", fontSize = 10.sp, letterSpacing = 2.sp, color = Cyan, fontWeight = FontWeight.Bold)
+                                Text("KebTee Silhouette", fontSize = 21.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                 Text("Live wallpaper • battery-aware", fontSize = 12.sp, color = Color(0xFFBBC6E0))
                             }
                         }
                         Spacer(Modifier.height(18.dp))
-                        AuroraPreview(accent, reduceMotion)
+                        SilhouettePreview(reduceMotion)
                         Spacer(Modifier.height(15.dp))
-                        Text("A custom animated aurora that pauses drawing when it isn't visible.", fontSize = 13.sp, lineHeight = 18.sp, color = Color(0xFFD8E0F5))
+                        Text("A luminous monochrome figure with a seamless breathing glow and traveling light sweep.", fontSize = 13.sp, lineHeight = 18.sp, color = Color(0xFFD8E0F5))
                         Spacer(Modifier.height(17.dp))
                         Button(
                             onClick = onLiveWallpaper, modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -270,25 +270,43 @@ private fun KebTeeHome(
 }
 
 @Composable
-private fun AuroraPreview(accent: Color, reduceMotion: Boolean) {
+private fun SilhouettePreview(reduceMotion: Boolean) {
+    val glow = if (reduceMotion) 0.52f else 0.9f
     Box(
-        Modifier.fillMaxWidth().height(104.dp).background(Color(0xFF080D1B), RoundedCornerShape(18.dp)).padding(1.dp)
+        Modifier.fillMaxWidth().height(104.dp)
+            .background(Color.Black, RoundedCornerShape(18.dp))
     ) {
-        Box(Modifier.fillMaxSize().background(
-            UiBrush.verticalGradient(listOf(Color(0xFF101B39), Color(0xFF080D1B))), RoundedCornerShape(17.dp)
-        ))
+        // Small scalable preview of the monochrome T-pose used by the live wallpaper.
+        Box(
+            Modifier.align(Alignment.Center).offset(y = (-30).dp).size(9.dp)
+                .background(Color.White.copy(alpha = glow), CircleShape)
+        )
+        Box(
+            Modifier.align(Alignment.Center).offset(y = (-20).dp).width(5.dp).height(13.dp)
+                .background(Color.White.copy(alpha = glow), RoundedCornerShape(3.dp))
+        )
+        Box(
+            Modifier.align(Alignment.Center).offset(y = (-9).dp).width(116.dp).height(4.dp)
+                .background(Color.White.copy(alpha = glow), RoundedCornerShape(4.dp))
+        )
+        Box(
+            Modifier.align(Alignment.Center).offset(y = (1).dp).width(22.dp).height(29.dp)
+                .background(Color.White.copy(alpha = glow), RoundedCornerShape(8.dp))
+        )
+        Box(
+            Modifier.align(Alignment.Center).offset(x = (-6).dp, y = (25).dp).width(6.dp).height(24.dp)
+                .background(Color.White.copy(alpha = glow * 0.65f), RoundedCornerShape(4.dp))
+        )
+        Box(
+            Modifier.align(Alignment.Center).offset(x = (6).dp, y = (25).dp).width(6.dp).height(24.dp)
+                .background(Color.White.copy(alpha = glow * 0.65f), RoundedCornerShape(4.dp))
+        )
         if (!reduceMotion) {
-            Box(Modifier.fillMaxWidth(0.78f).height(65.dp).align(Alignment.Center)
-                .background(UiBrush.horizontalGradient(listOf(accent.copy(alpha = 0.04f), accent.copy(alpha = 0.48f), Cyan.copy(alpha = 0.25f), Pink.copy(alpha = 0.10f))), RoundedCornerShape(50)))
+            Box(
+                Modifier.align(Alignment.Center).offset(y = (-9).dp).width(140.dp).height(1.dp)
+                    .background(UiBrush.horizontalGradient(listOf(Color.Transparent, Color.White.copy(alpha = 0.75f), Color.Transparent)))
+            )
         }
-        Box(Modifier.align(Alignment.Center).fillMaxWidth(0.55f).height(2.dp)
-            .background(UiBrush.horizontalGradient(listOf(Color.Transparent, Cyan, accent, Color.Transparent))))
-        Row(Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-            repeat(7) { index ->
-                Box(Modifier.size(if (index == 3) 5.dp else 3.dp).background(if (index % 2 == 0) Cyan.copy(alpha = 0.7f) else accent.copy(alpha = 0.75f), CircleShape))
-            }
-        }
-        Text(if (reduceMotion) "REDUCED MOTION" else "AURORA VISUAL PREVIEW", Modifier.align(Alignment.TopStart).padding(10.dp), color = Color(0xFFB8C8E9), fontSize = 8.sp, letterSpacing = 1.4.sp)
     }
 }
 
