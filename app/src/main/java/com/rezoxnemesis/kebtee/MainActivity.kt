@@ -58,6 +58,7 @@ import kotlin.math.roundToInt
 import com.rezoxnemesis.kebtee.wallpaper.KebTeeLiveWallpaperService
 import com.rezoxnemesis.kebtee.wallpaper.WallpaperStudioActivity
 import com.rezoxnemesis.kebtee.notifications.NotificationFeedStore
+import com.rezoxnemesis.kebtee.themes.ThemePresets
 import androidx.compose.ui.platform.LocalContext
 
 private val Night = Color(0xFF070B18)
@@ -406,19 +407,22 @@ private fun FeatureDialog(
             ) {
                 when (feature.action) {
                     FeatureAction.THEME -> {
-                        Text("Choose the accent used across KebTee. Your choice updates the interface immediately.")
-                        listOf(Violet to "Ultraviolet", Cyan to "Cyber cyan", Pink to "Pulse pink", Green to "Mint circuit").forEach { (color, label) ->
+                        Text("Choose a reusable visual preset. Applying a preset changes the live accent immediately and stores the choice locally.")
+                        ThemePresets.builtIns.forEach { preset ->
                             Surface(
-                                Modifier.fillMaxWidth().clickable { onAccentChange(color) },
+                                Modifier.fillMaxWidth().clickable { onAccentChange(preset.accent) },
                                 shape = RoundedCornerShape(14.dp),
-                                color = if (selectedAccent == color) color.copy(alpha = 0.18f) else Color(0xFF1A2439),
-                                border = BorderStroke(1.dp, if (selectedAccent == color) color else Color(0xFF2B3854))
+                                color = if (selectedAccent == preset.accent) preset.accent.copy(alpha = 0.18f) else Color(0xFF1A2439),
+                                border = BorderStroke(1.dp, if (selectedAccent == preset.accent) preset.accent else Color(0xFF2B3854))
                             ) {
                                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Box(Modifier.size(20.dp).background(color, CircleShape))
+                                    Box(Modifier.size(20.dp).background(preset.accent, CircleShape))
                                     Spacer(Modifier.width(10.dp))
-                                    Text(label, Modifier.weight(1f), color = Color.White)
-                                    if (selectedAccent == color) Icon(Icons.Default.Check, contentDescription = "Selected", tint = color)
+                                    Column(Modifier.weight(1f)) {
+                                        Text(preset.name, color = Color.White, fontWeight = FontWeight.Medium)
+                                        Text("Motion profile ${(preset.motionIntensity * 100).roundToInt()}%", color = Muted, fontSize = 10.sp)
+                                    }
+                                    if (selectedAccent == preset.accent) Icon(Icons.Default.Check, contentDescription = "Selected", tint = preset.accent)
                                 }
                             }
                         }
