@@ -50,9 +50,9 @@ object WallpaperCatalog {
         title: String,
         category: WallpaperCategory,
         rendererType: WallpaperRendererType,
-        primary: Int,
-        secondary: Int,
-        accent: Int,
+        primary: Long,
+        secondary: Long,
+        accent: Long,
         batteryProfile: BatteryProfile,
         amoledFriendly: Boolean
     ) = WallpaperScene(
@@ -62,12 +62,12 @@ object WallpaperCatalog {
         rendererType = rendererType,
         palette = WallpaperPalette(
             primary = Color.rgb(
-                Color.red(primary),
-                Color.green(primary),
-                Color.blue(primary)
+                Color.red(primary.toInt()),
+                Color.green(primary.toInt()),
+                Color.blue(primary.toInt())
             ),
-            secondary = Color.rgb(Color.red(secondary), Color.green(secondary), Color.blue(secondary)),
-            accent = Color.rgb(Color.red(accent), Color.green(accent), Color.blue(accent))
+            secondary = Color.rgb(Color.red(secondary.toInt()), Color.green(secondary.toInt()), Color.blue(secondary.toInt())),
+            accent = Color.rgb(Color.red(accent.toInt()), Color.green(accent.toInt()), Color.blue(accent.toInt()))
         ),
         batteryProfile = batteryProfile,
         amoledFriendly = amoledFriendly
