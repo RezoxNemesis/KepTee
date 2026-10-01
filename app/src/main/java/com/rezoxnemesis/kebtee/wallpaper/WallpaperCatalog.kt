@@ -1,7 +1,5 @@
 package com.rezoxnemesis.kebtee.wallpaper
 
-import android.graphics.Color
-
 object WallpaperCatalog {
     val scenes: List<WallpaperScene> = listOf(
         scene("aurora-01", "Arctic Veil", WallpaperCategory.AURORA, WallpaperRendererType.AURORA, 0xFF14213D, 0xFF2E86AB, 0xFF9AE6B4, BatteryProfile.BALANCED, true),
@@ -61,13 +59,9 @@ object WallpaperCatalog {
         category = category,
         rendererType = rendererType,
         palette = WallpaperPalette(
-            primary = Color.rgb(
-                Color.red(primary.toInt()),
-                Color.green(primary.toInt()),
-                Color.blue(primary.toInt())
-            ),
-            secondary = Color.rgb(Color.red(secondary.toInt()), Color.green(secondary.toInt()), Color.blue(secondary.toInt())),
-            accent = Color.rgb(Color.red(accent.toInt()), Color.green(accent.toInt()), Color.blue(accent.toInt()))
+            primary = primary.toInt(),
+            secondary = secondary.toInt(),
+            accent = accent.toInt()
         ),
         batteryProfile = batteryProfile,
         amoledFriendly = amoledFriendly
