@@ -175,8 +175,8 @@ class MainActivity : ComponentActivity() {
             "sound" -> if (Build.VERSION.SDK_INT >= 29) Intent(Settings.Panel.ACTION_VOLUME) else Intent(Settings.ACTION_SOUND_SETTINGS)
             "internet" -> if (Build.VERSION.SDK_INT >= 29) Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY) else Intent(Settings.ACTION_WIFI_SETTINGS)
             "wifi" -> Intent(Settings.ACTION_WIFI_SETTINGS)
-            "bluetooth" -> if (Build.VERSION.SDK_INT >= 29) Intent(Settings.Panel.ACTION_BLUETOOTH) else Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
-            "brightness" -> if (Build.VERSION.SDK_INT >= 29) Intent(Settings.Panel.ACTION_BRIGHTNESS) else Intent(Settings.ACTION_DISPLAY_SETTINGS)
+            "bluetooth" -> Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+            "brightness" -> Intent(Settings.ACTION_DISPLAY_SETTINGS)
             "display" -> Intent(Settings.ACTION_DISPLAY_SETTINGS)
             else -> Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
         }
