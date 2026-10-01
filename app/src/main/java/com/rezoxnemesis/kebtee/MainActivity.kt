@@ -45,19 +45,43 @@ private val Pink = Color(0xFFEC4899)
 private val Green = Color(0xFF6EE7B7)
 private val Muted = Color(0xFF9EABC9)
 
+internal fun accentFromPreference(value: String?): Color = when (value) {
+    "cyan" -> Cyan
+    "pink" -> Pink
+    "green" -> Green
+    else -> Violet
+}
+
+internal fun preferenceForAccent(color: Color): String = when (color) {
+    Cyan -> "cyan"
+    Pink -> "pink"
+    Green -> "green"
+    else -> "violet"
+}
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.statusBarColor = android.graphics.Color.rgb(7, 11, 24)
         window.navigationBarColor = android.graphics.Color.rgb(7, 11, 24)
+        val preferences = getSharedPreferences("kebtee_preferences", MODE_PRIVATE)
         setContent {
-            var accent by remember { mutableStateOf(Violet) }
+            var accent by remember { mutableStateOf(accentFromPreference(preferences.getString("accent", "violet"))) }
+            var reduceMotion by remember { mutableStateOf(preferences.getBoolean("reduce_motion", false)) }
             MaterialTheme(
                 colorScheme = darkColorScheme(primary = accent, secondary = Cyan, tertiary = Pink, background = Night, surface = Panel)
             ) {
                 KebTeeHome(
                     accent = accent,
-                    onAccentChange = { accent = it },
+                    reduceMotion = reduceMotion,
+                    onReduceMotionChange = {
+                        reduceMotion = it
+                        preferences.edit().putBoolean("reduce_motion", it).apply()
+                    },
+                    onAccentChange = {
+                        accent = it
+                        preferences.edit().putString("accent", preferenceForAccent(it)).apply()
+                    },
                     onLiveWallpaper = { openWallpaperPicker() },
                     onOpenSystemSettings = { action -> openSystemSettings(action) }
                 )
@@ -100,12 +124,13 @@ private data class Feature(val title: String, val subtitle: String, val icon: Im
 @Composable
 private fun KebTeeHome(
     accent: Color,
+    reduceMotion: Boolean,
+    onReduceMotionChange: (Boolean) -> Unit,
     onAccentChange: (Color) -> Unit,
     onLiveWallpaper: () -> Unit,
     onOpenSystemSettings: (String) -> Unit
 ) {
     var selectedFeature by remember { mutableStateOf<Feature?>(null) }
-    var reduceMotion by remember { mutableStateOf(false) }
     val features = listOf(
         Feature("Live Wallpaper", "Animated scenes for your screen", Icons.Default.Wallpaper, Cyan, FeatureAction.WALLPAPER),
         Feature("Theme Studio", "Choose your KebTee accent", Icons.Default.Palette, Violet, FeatureAction.THEME),
@@ -138,7 +163,7 @@ private fun KebTeeHome(
                     Row(Modifier.padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(6.dp).background(Green, CircleShape))
                         Spacer(Modifier.width(6.dp))
-                        Text("READY", color = Green, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text("BETA", color = Green, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 }
             }
@@ -210,7 +235,7 @@ private fun KebTeeHome(
 
     selectedFeature?.let { feature ->
         FeatureDialog(
-            feature, accent, reduceMotion, { reduceMotion = it }, onAccentChange, onOpenSystemSettings,
+            feature, accent, reduceMotion, onReduceMotionChange, onAccentChange, onOpenSystemSettings,
             { selectedFeature = null }
         )
     }
@@ -235,7 +260,7 @@ private fun AuroraPreview(accent: Color, reduceMotion: Boolean) {
                 Box(Modifier.size(if (index == 3) 5.dp else 3.dp).background(if (index % 2 == 0) Cyan.copy(alpha = 0.7f) else accent.copy(alpha = 0.75f), CircleShape))
             }
         }
-        Text(if (reduceMotion) "REDUCED MOTION" else "LIVE WALLPAPER PREVIEW", Modifier.align(Alignment.TopStart).padding(10.dp), color = Color(0xFFB8C8E9), fontSize = 8.sp, letterSpacing = 1.4.sp)
+        Text(if (reduceMotion) "REDUCED MOTION" else "AURORA VISUAL PREVIEW", Modifier.align(Alignment.TopStart).padding(10.dp), color = Color(0xFFB8C8E9), fontSize = 8.sp, letterSpacing = 1.4.sp)
     }
 }
 
