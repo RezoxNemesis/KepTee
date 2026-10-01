@@ -10,6 +10,7 @@ import android.provider.Settings
 import android.os.Build
 import android.os.Bundle
 import android.content.pm.PackageManager
+import android.media.AudioManager
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
@@ -17,6 +18,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -41,6 +44,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 import com.rezoxnemesis.kebtee.wallpaper.KebTeeLiveWallpaperService
 
 private val Night = Color(0xFF070B18)
@@ -75,6 +79,7 @@ class MainActivity : ComponentActivity() {
         window.statusBarColor = android.graphics.Color.rgb(7, 11, 24)
         window.navigationBarColor = android.graphics.Color.rgb(7, 11, 24)
         val preferences = getSharedPreferences("kebtee_preferences", MODE_PRIVATE)
+        val audioManager = getSystemService(AudioManager::class.java)
         setContent {
             var accent by remember { mutableStateOf(accentFromPreference(preferences.getString("accent", "violet"))) }
             var reduceMotion by remember { mutableStateOf(preferences.getBoolean("reduce_motion", false)) }
@@ -84,6 +89,7 @@ class MainActivity : ComponentActivity() {
                 KebTeeHome(
                     accent = accent,
                     reduceMotion = reduceMotion,
+                    audioManager = audioManager,
                     onReduceMotionChange = {
                         reduceMotion = it
                         preferences.edit().putBoolean("reduce_motion", it).apply()
@@ -153,6 +159,7 @@ private data class Feature(val title: String, val subtitle: String, val icon: Im
 private fun KebTeeHome(
     accent: Color,
     reduceMotion: Boolean,
+    audioManager: AudioManager,
     onReduceMotionChange: (Boolean) -> Unit,
     onAccentChange: (Color) -> Unit,
     onLiveWallpaper: () -> Unit,
@@ -163,7 +170,7 @@ private fun KebTeeHome(
         Feature("Live Wallpaper", "Animated scenes for your screen", Icons.Default.Wallpaper, Cyan, FeatureAction.WALLPAPER),
         Feature("Theme Studio", "Choose your KebTee accent", Icons.Default.Palette, Violet, FeatureAction.THEME),
         Feature("Home Experience", "Open your home-screen settings", Icons.Default.Home, Pink, FeatureAction.HOME),
-        Feature("Volume Lab", "Jump to Android sound controls", Icons.Default.Tune, Cyan, FeatureAction.VOLUME),
+        Feature("Volume Lab", "Custom in-app audio sliders", Icons.Default.Tune, Cyan, FeatureAction.VOLUME),
         Feature("Notifications", "Manage KebTee notifications", Icons.Default.Notifications, Violet, FeatureAction.NOTIFICATIONS),
         Feature("Effects & Motion", "Set a lighter visual experience", Icons.Default.Bolt, Pink, FeatureAction.MOTION)
     )
@@ -263,7 +270,7 @@ private fun KebTeeHome(
 
     selectedFeature?.let { feature ->
         FeatureDialog(
-            feature, accent, reduceMotion, onReduceMotionChange, onAccentChange, onOpenSystemSettings,
+            feature, accent, reduceMotion, audioManager, onReduceMotionChange, onAccentChange, onOpenSystemSettings,
             { selectedFeature = null }
         )
     }
@@ -334,6 +341,7 @@ private fun FeatureDialog(
     feature: Feature,
     selectedAccent: Color,
     reduceMotion: Boolean,
+    audioManager: AudioManager,
     onReduceMotionChange: (Boolean) -> Unit,
     onAccentChange: (Color) -> Unit,
     onOpenSystemSettings: (String) -> Unit,
@@ -344,7 +352,10 @@ private fun FeatureDialog(
         titleContentColor = Color.White, textContentColor = Color(0xFFB7C3DD),
         title = { Text(feature.title, fontWeight = FontWeight.Bold) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 when (feature.action) {
                     FeatureAction.THEME -> {
                         Text("Choose the accent used across KebTee. Your choice updates the interface immediately.")
@@ -369,8 +380,45 @@ private fun FeatureDialog(
                         Button(onClick = { onOpenSystemSettings("home"); onDismiss() }, modifier = Modifier.fillMaxWidth()) { Text("Open Home settings") }
                     }
                     FeatureAction.VOLUME -> {
-                        Text("Android keeps the system volume panel under OS control. Use system sound settings for media, calls, alarms and accessibility volume.")
-                        Button(onClick = { onOpenSystemSettings("sound"); onDismiss() }, modifier = Modifier.fillMaxWidth()) { Text("Open sound settings") }
+                        Text(
+                            "Adjust audio streams directly from KebTee. Android may link ring and notification volume on some devices; the system volume popup itself remains controlled by Android.",
+                            color = Muted, fontSize = 12.sp, lineHeight = 17.sp
+                        )
+                        listOf(
+                            AudioManager.STREAM_MUSIC to "Media",
+                            AudioManager.STREAM_RING to "Ringtone",
+                            AudioManager.STREAM_NOTIFICATION to "Notifications",
+                            AudioManager.STREAM_ALARM to "Alarm",
+                            AudioManager.STREAM_SYSTEM to "System sounds"
+                        ).forEach { (stream, label) ->
+                            val maxVolume = audioManager.getStreamMaxVolume(stream).coerceAtLeast(1)
+                            var level by remember(stream) {
+                                mutableFloatStateOf(audioManager.getStreamVolume(stream).coerceIn(0, maxVolume).toFloat())
+                            }
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(label, Modifier.weight(1f), color = Color.White, fontWeight = FontWeight.Medium)
+                                    Text("${level.roundToInt()} / $maxVolume", color = Cyan, fontSize = 11.sp)
+                                }
+                                Slider(
+                                    value = level,
+                                    onValueChange = { newLevel ->
+                                        level = newLevel
+                                        try {
+                                            audioManager.setStreamVolume(stream, newLevel.roundToInt(), 0)
+                                        } catch (_: SecurityException) {
+                                            // OEM restrictions may prevent changing a particular stream.
+                                        } catch (_: IllegalArgumentException) {
+                                            // Some Android builds do not expose every stream equally.
+                                        }
+                                    },
+                                    valueRange = 0f..maxVolume.toFloat(),
+                                    steps = (maxVolume - 1).coerceAtLeast(0),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                        Text("Note: some Android versions merge ring and notification volume.", color = Muted, fontSize = 11.sp)
                     }
                     FeatureAction.NOTIFICATIONS -> {
                         Text("Enable Android's notification permission for KebTee, then review the app-specific notification controls. Android may still restrict some settings on your device.")

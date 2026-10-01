@@ -22,7 +22,7 @@
         </activity>
         <service
             android:name=".wallpaper.KebTeeLiveWallpaperService"
-            android:label="KebTee Aurora"
+            android:label="KebTee Silhouette"
             android:permission="android.permission.BIND_WALLPAPER"
             android:exported="true">
             <intent-filter>
