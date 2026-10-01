@@ -40,14 +40,16 @@ private data class HomeApp(val label: String, val packageName: String, val class
 class HomeLauncherActivity : ComponentActivity() {
     private val night = Color(0xFF070B18)
     private val panel = Color(0xFF121A2D)
-    private val cyan = Color(0xFF22D3EE)
-    private val violet = Color(0xFF8B5CF6)
+    private var installedApps by mutableStateOf<List<HomeApp>>(emptyList())
+    private var launcherAccent by mutableStateOf(Color(0xFF22D3EE))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.statusBarColor = android.graphics.Color.rgb(7, 11, 24)
         window.navigationBarColor = android.graphics.Color.rgb(7, 11, 24)
-        val apps = loadApps()
+        installedApps = loadApps()
+        launcherAccent = accentFromPreference(getSharedPreferences("kebtee_preferences", MODE_PRIVATE).getString("accent", "violet"))
+        val apps = installedApps
         val launcherPreferences = getSharedPreferences("kebtee_launcher", MODE_PRIVATE)
         val defaultFavorites = apps.filter { app ->
             listOf("phone", "camera", "chrome", "messages", "settings").any { keyword ->
@@ -59,6 +61,8 @@ class HomeLauncherActivity : ComponentActivity() {
         if (savedFavorites == null) launcherPreferences.edit().putStringSet("favorites", initialFavorites).apply()
 
         setContent {
+            val apps = installedApps
+            val cyan = launcherAccent
             var search by remember { mutableStateOf("") }
             var showAllApps by remember { mutableStateOf(false) }
             var favoriteKeys by remember { mutableStateOf(initialFavorites) }
@@ -68,7 +72,7 @@ class HomeLauncherActivity : ComponentActivity() {
             val favorites = remember(favoriteKeys, apps) { apps.filter { it.key in favoriteKeys } }
 
             BackHandler(enabled = showAllApps) { showAllApps = false }
-            MaterialTheme(colorScheme = darkColorScheme(primary = violet, secondary = cyan, background = night, surface = panel)) {
+            MaterialTheme(colorScheme = darkColorScheme(primary = cyan, secondary = cyan, background = night, surface = panel)) {
                 Column(
                     Modifier.fillMaxSize()
                         .background(Brush.verticalGradient(listOf(Color(0xFF10172D), night, Color(0xFF090D1C))))
@@ -173,6 +177,12 @@ class HomeLauncherActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (installedApps.isNotEmpty()) installedApps = loadApps()
+        launcherAccent = accentFromPreference(getSharedPreferences("kebtee_preferences", MODE_PRIVATE).getString("accent", "violet"))
     }
 
     @Composable
