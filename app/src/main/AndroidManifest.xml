@@ -19,7 +19,6 @@
         </activity>
         <activity android:name=".HomeLauncherActivity" android:exported="true" android:label="KebTee Home">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.HOME" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>
-            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity>
         <service
             android:name=".wallpaper.KebTeeLiveWallpaperService"

@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -61,6 +62,10 @@ class HomeLauncherActivity : ComponentActivity() {
                         }
                         Surface(color = Color(0xFF182440), shape = RoundedCornerShape(18.dp)) {
                             Text("${apps.size} APPS", color = Color(0xFFB9C7E5), fontSize = 10.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp))
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        IconButton(onClick = { startActivity(Intent(this@HomeLauncherActivity, MainActivity::class.java)) }) {
+                            Icon(Icons.Default.Settings, contentDescription = "Open KebTee customization dashboard", tint = cyan)
                         }
                     }
                     Spacer(Modifier.height(24.dp))
