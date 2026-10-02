@@ -2,6 +2,8 @@ package com.rezoxnemesis.kebtee.wallpaper
 
 import android.app.WallpaperManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import com.rezoxnemesis.kebtee.R
 import android.graphics.Canvas as AndroidCanvas
 import android.content.ComponentName
 import android.content.Intent
@@ -69,6 +71,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import com.rezoxnemesis.kebtee.ui.designsystem.KebTeeTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -294,9 +297,11 @@ private fun StaticWallpaperPreview(
     scene: WallpaperScene,
     modifier: Modifier = Modifier
 ) {
-    val bitmap = remember(scene.id) {
+    val context = LocalContext.current
+    val silhouette = remember(context) { BitmapFactory.decodeResource(context.resources, R.drawable.kebtee_silhouette) }
+    val bitmap = remember(scene.id, silhouette) {
         Bitmap.createBitmap(720, 480, Bitmap.Config.ARGB_8888).also {
-            WallpaperRenderer().draw(
+            WallpaperRenderer(silhouette).draw(
                 AndroidCanvas(it),
                 scene,
                 WallpaperRenderState(
@@ -325,12 +330,14 @@ private fun AnimatedWallpaperPreview(
     batteryMode: Boolean,
     reducedMotion: Boolean
 ) {
+    val context = LocalContext.current
+    val silhouette = remember(context) { BitmapFactory.decodeResource(context.resources, R.drawable.kebtee_silhouette) }
     val bitmap = remember(scene.id) {
         Bitmap.createBitmap(720, 405, Bitmap.Config.ARGB_8888)
     }
     val tick = remember { mutableIntStateOf(0) }
-    LaunchedEffect(scene.id, speed, intensity, batteryMode, reducedMotion) {
-        val renderer = WallpaperRenderer()
+    LaunchedEffect(scene.id, speed, intensity, batteryMode, reducedMotion, silhouette) {
+        val renderer = WallpaperRenderer(silhouette)
         val startedAt = SystemClock.uptimeMillis()
         while (isActive) {
             val elapsed = (SystemClock.uptimeMillis() - startedAt) / 1000f
