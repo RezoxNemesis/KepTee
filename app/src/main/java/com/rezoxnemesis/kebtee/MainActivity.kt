@@ -270,38 +270,19 @@ private fun KebTeeHome(
                 ) {
                     Column {
                         Box(Modifier.fillMaxWidth().height(186.dp)) {
-                            Canvas(Modifier.matchParentSize()) {
-                                drawRect(UiBrush.verticalGradient(listOf(Color(0xFF092B60), Color(0xFF101B43), Color(0xFF080E22))))
-                                drawCircle(
-                                    brush = UiBrush.radialGradient(listOf(Color(0x5522D3EE), Color.Transparent), center = androidx.compose.ui.geometry.Offset(size.width * 0.78f, size.height * 0.36f), radius = size.width * 0.28f),
-                                    radius = size.width * 0.28f,
-                                    center = androidx.compose.ui.geometry.Offset(size.width * 0.78f, size.height * 0.36f)
+                            Image(
+                                painter = painterResource(id = R.drawable.kebtee_silhouette),
+                                contentDescription = "Prepared KepTee live wallpaper",
+                                modifier = Modifier.matchParentSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                            Box(
+                                Modifier.matchParentSize().background(
+                                    UiBrush.verticalGradient(
+                                        listOf(Color(0x22070B18), Color(0x33070B18), Color(0xCC070B18))
+                                    )
                                 )
-                                drawCircle(Color(0xFFB7E8FF), radius = size.width * 0.065f, center = androidx.compose.ui.geometry.Offset(size.width * 0.78f, size.height * 0.36f))
-                                val far = androidx.compose.ui.graphics.Path().apply {
-                                    moveTo(0f, size.height * 0.78f)
-                                    lineTo(size.width * 0.18f, size.height * 0.44f)
-                                    lineTo(size.width * 0.32f, size.height * 0.68f)
-                                    lineTo(size.width * 0.51f, size.height * 0.35f)
-                                    lineTo(size.width * 0.77f, size.height * 0.77f)
-                                    lineTo(size.width, size.height * 0.51f)
-                                    lineTo(size.width, size.height)
-                                    lineTo(0f, size.height)
-                                    close()
-                                }
-                                drawPath(far, Color(0xFF174A8B))
-                                val near = androidx.compose.ui.graphics.Path().apply {
-                                    moveTo(0f, size.height * 0.86f)
-                                    lineTo(size.width * 0.26f, size.height * 0.62f)
-                                    lineTo(size.width * 0.45f, size.height * 0.83f)
-                                    lineTo(size.width * 0.72f, size.height * 0.58f)
-                                    lineTo(size.width, size.height * 0.82f)
-                                    lineTo(size.width, size.height)
-                                    lineTo(0f, size.height)
-                                    close()
-                                }
-                                drawPath(near, Color(0xFF07152F))
-                            }
+                            )
                             Surface(
                                 Modifier.align(Alignment.TopStart).padding(14.dp),
                                 shape = RoundedCornerShape(20.dp),
