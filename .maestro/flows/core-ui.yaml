@@ -1,0 +1,26 @@
+appId: com.rezoxnemesis.kebtee
+---
+- launchApp:
+    clearState: true
+- assertVisible: "KebTee"
+- assertVisible: "CUSTOMIZATION LABS"
+- takeScreenshot: "keptee-dashboard"
+- tapOn: "Theme Studio"
+- assertVisible: "Cyber cyan"
+- tapOn: "Cyber cyan"
+- tapOn: "Done"
+- tapOn: "Effects & Motion"
+- assertVisible: "Reduced-motion preview"
+- tapOn: "Reduced-motion preview"
+- tapOn: "Done"
+- tapOn: "Volume Lab"
+- assertVisible: "Media"
+- assertVisible: "Ringtone"
+- takeScreenshot: "keptee-volume-lab"
+- tapOn: "Done"
+- tapOn: "Notifications"
+- assertVisible: "Send test notification"
+- assertVisible: "Notification settings"
+- takeScreenshot: "keptee-notification-controls"
+- tapOn: "Done"
+- assertVisible: "KebTee"
