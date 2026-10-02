@@ -21,9 +21,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -217,7 +214,7 @@ private fun KebTeeHome(
         Column(
             Modifier.fillMaxSize()
                 .background(UiBrush.verticalGradient(listOf(Color(0xFF10172D), Night, Color(0xFF090D1C))))
-                .statusBarsPadding().navigationBarsPadding().padding(horizontal = 20.dp)
+                .statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
         ) {
             Spacer(Modifier.height(18.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -293,17 +290,20 @@ private fun KebTeeHome(
                 Text("7 TOOLS", fontSize = 10.sp, color = Muted)
             }
             Spacer(Modifier.height(12.dp))
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2), modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 22.dp)
-            ) {
-                items(features) { feature ->
-                    FeatureCard(feature) {
-                        if (feature.action == FeatureAction.WALLPAPER) onLiveWallpaper() else selectedFeature = feature
+            features.chunked(2).forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    row.forEach { feature ->
+                        Box(Modifier.weight(1f)) {
+                            FeatureCard(feature) {
+                                if (feature.action == FeatureAction.WALLPAPER) onLiveWallpaper() else selectedFeature = feature
+                            }
+                        }
                     }
+                    if (row.size == 1) Spacer(Modifier.weight(1f))
                 }
+                Spacer(Modifier.height(12.dp))
             }
+            Spacer(Modifier.height(10.dp))
         }
     }
 
@@ -363,10 +363,10 @@ private fun SilhouettePreview(reduceMotion: Boolean) {
 @Composable
 private fun FeatureCard(feature: Feature, onClick: () -> Unit) {
     Surface(
-        Modifier.fillMaxWidth().height(142.dp).clickable(onClick = onClick),
+        Modifier.fillMaxWidth().heightIn(min = 142.dp).clickable(onClick = onClick),
         shape = RoundedCornerShape(22.dp), color = Panel, border = BorderStroke(1.dp, Color(0xFF283451))
     ) {
-        Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.SpaceBetween) {
+        Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(Modifier.size(40.dp).background(feature.accent.copy(alpha = 0.14f), RoundedCornerShape(13.dp)), contentAlignment = Alignment.Center) {
                 Icon(feature.icon, contentDescription = null, tint = feature.accent)
             }

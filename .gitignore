@@ -1,0 +1,16 @@
+# Local build output and machine configuration
+.gradle/
+.kotlin/
+**/build/
+**/.cxx/
+local.properties
+.idea/
+*.iml
+# Signing and local credentials
+*.jks
+*.keystore
+.env
+.env.*
+!*.example
+# Test captures
+/test-results/

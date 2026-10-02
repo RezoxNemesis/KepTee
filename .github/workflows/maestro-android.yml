@@ -51,7 +51,7 @@ jobs:
           gradle-version: "8.9"
 
       - name: Build APK and run unit tests and lint
-        run: gradle --no-daemon assembleDebug testDebugUnitTest lintDebug
+        run: ./gradlew --no-daemon assembleDebug testDebugUnitTest lintDebug
 
       - name: Save debug APK
         uses: actions/upload-artifact@v4
@@ -62,14 +62,30 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+      - name: Enable hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          test -r /dev/kvm && test -w /dev/kvm
+      - name: Install Maestro before starting emulator
+        run: |
+          curl -fsSL --retry 3 https://get.maestro.mobile.dev -o /tmp/install-maestro.sh
+          bash /tmp/install-maestro.sh
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          "$HOME/.maestro/bin/maestro" --version
+
       - name: Run Maestro UI tests on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
           target: google_apis
           arch: x86_64
-          profile: pixel_6
+          profile: pixel_2
           emulator-options: -no-window -no-audio -no-boot-anim -camera-back none -camera-front none
+          ram-size: 2048M
+          heap-size: 512M
+          disk-size: 2048M
           disable-animations: true
           script: bash .github/scripts/run-maestro-ui.sh
 

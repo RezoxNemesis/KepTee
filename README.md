@@ -1,36 +1,22 @@
-# KebTee
-**Your Phone, Your Style.**
+# KepTee (KebTee on device)
 
-KebTee is a native Android customization studio. The first vertical slice focuses on a polished dashboard and an animated, battery-conscious live wallpaper.
+A native Android customisation app with a Compose dashboard, optional home launcher and a battery-aware live wallpaper. Android 8.0 (API 26) and above. The established on-device name and package `com.rezoxnemesis.kebtee` are retained for upgrade compatibility.
 
-## Features in this starter
-- Jetpack Compose + Material 3 dashboard
-- Aurora live wallpaper implemented with Android's `WallpaperService`
-- Wallpaper preview/apply hand-off to Android's system picker
-- Dark AMOLED visual design
-- CI workflow for Android build, unit tests, and lint
+Features: persisted theme accents and reduced-motion preference; wallpaper preview through Android's picker; searchable installed-app drawer with pinned favourites; in-app volume controls; test notifications with runtime permission; shortcuts to supported Android settings panels. All seven dashboard tools share one scrollable page so they remain reachable on short screens.
 
-## Build requirements
-- JDK 17
-- Android SDK 35
-- Gradle 8.9
-- Android Studio with Kotlin/Compose support
+Android controls the global notification shade, system volume popup and default-home selection. KepTee does not require privileged access and does not claim to replace those protected surfaces. Existing silhouette artwork and adaptive launcher branding are preserved.
 
-## Build locally
-If Gradle 8.9 is installed and Android SDK is configured:
+The app uses local preferences and platform APIs; no backend, account or paid API is required. Source is split between the dashboard, home launcher and wallpaper renderer. Device tests include startup/recreation and landscape tool navigation. Maestro covers dashboard dialogs; GitHub Actions enables KVM before emulator startup.
+
+For device tests with a connected emulator: `./gradlew connectedDebugAndroidTest`.
+
+## Build and verification
+
+Requirements: a complete JDK 17 or 21, Android SDK platform 35 and build tools, and internet for the first dependency download. The Gradle 8.9 wrapper verifies its distribution checksum. No paid runtime service is required.
+
 ```sh
-gradle assembleDebug
-gradle testDebugUnitTest
-gradle lintDebug
+./gradlew testDebugUnitTest lintDebug assembleDebug
+./gradlew assembleRelease
 ```
 
-## Platform boundaries
-KebTee will use supported Android APIs and explicit user permissions. A regular app cannot guarantee replacing Realme UI's native notification shade, native volume panel, or protected system animations. Those features will be implemented as clearly labelled companion experiences where Android allows them.
-
-## Roadmap
-1. Establish reproducible CI and a working APK.
-2. Expand Live Wallpaper Studio with presets and settings.
-3. Add Theme Studio and wallpaper collections.
-4. Explore launcher customization.
-5. Add optional volume overlays and notification companion UI with explicit permissions.
-6. Device testing, privacy review, and Play Store release preparation.
+Release APKs are unsigned until a maintainer configures their own signing key outside source control. Never distribute a debug-signed APK as a production release. Keep application IDs stable to preserve upgrade compatibility. See `docs/ENGINEERING_STATUS.md` for verification evidence and remaining release gates.
