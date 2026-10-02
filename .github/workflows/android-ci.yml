@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: android-ci-${{ github.ref }}
@@ -80,10 +80,26 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Upload debug APK even when startup smoke fails
+        id: upload_debug_apk
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: kebtee-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: warn
           retention-days: 14
+      - name: Publish APK release if artifact storage is unavailable
+        if: always() && steps.upload_debug_apk.outcome == 'failure' && github.event_name != 'pull_request'
+        continue-on-error: true
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: keptee-build-${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          name: KepTee APK build ${{ github.run_number }}
+          body: |
+            Automated KepTee debug APK built from commit ${{ github.sha }}.
+            The APK is published as a fallback because Actions artifact upload failed.
+            Check the workflow logs for startup-smoke status before installing.
+          prerelease: true
+          files: app/build/outputs/apk/debug/app-debug.apk
