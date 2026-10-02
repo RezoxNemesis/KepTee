@@ -487,7 +487,7 @@ private fun SilhouettePreview(reduceMotion: Boolean) {
     ) {
         Image(
             painter = painterResource(id = R.drawable.kebtee_silhouette),
-            contentDescription = "KebTee monochrome silhouette reference wallpaper",
+            contentDescription = "KepTee monochrome silhouette reference wallpaper",
             modifier = Modifier.align(Alignment.Center).fillMaxHeight().graphicsLayer(
                 scaleX = if (reduceMotion) 1f else animatedScale,
                 scaleY = if (reduceMotion) 1f else animatedScale
@@ -573,7 +573,7 @@ private fun FeatureDialog(
                     }
                     FeatureAction.VOLUME -> {
                         Text(
-                            "Adjust audio streams directly from KebTee. Android may link ring and notification volume on some devices; the system volume popup itself remains controlled by Android.",
+                            "Adjust audio streams directly from KepTee. Android may link ring and notification volume on some devices; the system volume popup itself remains controlled by Android.",
                             color = Muted, fontSize = 12.sp, lineHeight = 17.sp
                         )
                         listOf(
@@ -616,7 +616,7 @@ private fun FeatureDialog(
                         val context = LocalContext.current
                         val feed = remember(feature.action) { NotificationFeedStore.list(context).take(8) }
                         Text(
-                            "KebTee can send its own notifications or, after explicit Android Notification Access permission, show a local feed of recent notifications. The system notification shade remains owned by Android.",
+                            "KepTee can send its own notifications or, after explicit Android Notification Access permission, show a local feed of recent notifications. The system notification shade remains owned by Android.",
                             color = Muted, fontSize = 12.sp, lineHeight = 17.sp
                         )
                         Button(onClick = { onTestNotification(); onDismiss() }, modifier = Modifier.fillMaxWidth()) {
@@ -651,7 +651,7 @@ private fun FeatureDialog(
                         }
                     }
                     FeatureAction.MOTION -> {
-                        Text("Reduce visual motion in KebTee's preview. The live wallpaper service also pauses drawing when it isn't visible.")
+                        Text("Reduce visual motion in KepTee's preview. The live wallpaper service also pauses drawing when it isn't visible.")
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("Reduced-motion preview", Modifier.weight(1f), color = Color.White)
                             Switch(checked = reduceMotion, onCheckedChange = onReduceMotionChange)
@@ -659,7 +659,7 @@ private fun FeatureDialog(
                     }
                     FeatureAction.CONTROL_CENTER -> {
                         Text(
-                            "A KebTee quick-access hub for Android's native control panels. These shortcuts open the real system controls; Android still owns the notification shade and Quick Settings.",
+                            "A KepTee quick-access hub for Android's native control panels. These shortcuts open the real system controls; Android still owns the notification shade and Quick Settings.",
                             color = Muted, fontSize = 12.sp, lineHeight = 17.sp
                         )
                         Button(onClick = { onOpenSystemSettings("internet") }, modifier = Modifier.fillMaxWidth()) { Text("Internet & Wi-Fi") }
