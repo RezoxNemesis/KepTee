@@ -7,9 +7,10 @@ import org.junit.Test
 
 class WallpaperCatalogTest {
     @Test
-    fun catalogContainsFortyUniqueScenes() {
-        assertEquals(40, WallpaperCatalog.scenes.size)
-        assertEquals(40, WallpaperCatalog.scenes.map { it.id }.toSet().size)
+    fun catalogContainsFortyOneUniqueScenesIncludingPreparedWallpaper() {
+        assertEquals(41, WallpaperCatalog.scenes.size)
+        assertEquals(41, WallpaperCatalog.scenes.map { it.id }.toSet().size)
+        assertNotNull(WallpaperCatalog.byId("keptee-silhouette"))
     }
 
     @Test
@@ -31,6 +32,7 @@ class WallpaperCatalogTest {
         assertTrue(categories.contains(WallpaperCategory.NATURE))
         assertTrue(categories.contains(WallpaperCategory.AMOLED))
         assertTrue(categories.contains(WallpaperCategory.PARTICLE))
+        assertTrue(categories.contains(WallpaperCategory.SILHOUETTE))
     }
 
     @Test
