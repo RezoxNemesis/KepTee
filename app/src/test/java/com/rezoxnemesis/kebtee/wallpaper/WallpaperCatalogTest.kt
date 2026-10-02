@@ -7,9 +7,9 @@ import org.junit.Test
 
 class WallpaperCatalogTest {
     @Test
-    fun catalogContainsExactlyThirtyUniqueScenes() {
-        assertEquals(30, WallpaperCatalog.scenes.size)
-        assertEquals(30, WallpaperCatalog.scenes.map { it.id }.toSet().size)
+    fun catalogContainsFortyUniqueScenes() {
+        assertEquals(40, WallpaperCatalog.scenes.size)
+        assertEquals(40, WallpaperCatalog.scenes.map { it.id }.toSet().size)
     }
 
     @Test
