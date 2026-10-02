@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.content.pm.PackageManager
 import android.media.AudioManager
+import android.graphics.BitmapFactory
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
@@ -40,6 +41,7 @@ import androidx.compose.ui.graphics.Brush as UiBrush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -340,16 +342,33 @@ private fun SilhouettePreview(reduceMotion: Boolean) {
         Modifier.fillMaxWidth().height(144.dp)
             .background(Color.Black, RoundedCornerShape(18.dp))
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.kebtee_silhouette),
-            contentDescription = "KebTee monochrome silhouette reference wallpaper",
-            modifier = Modifier.align(Alignment.Center).fillMaxHeight().graphicsLayer(
-                scaleX = if (reduceMotion) 1f else animatedScale,
-                scaleY = if (reduceMotion) 1f else animatedScale
-            ),
-            contentScale = ContentScale.Fit,
-            alpha = if (reduceMotion) 1f else animatedAlpha
+        val resources = androidx.compose.ui.platform.LocalContext.current.resources
+        val silhouetteBitmap = remember(resources) {
+            BitmapFactory.decodeResource(resources, R.drawable.kebtee_silhouette)?.asImageBitmap()
+        }
+        val artworkModifier = Modifier.align(Alignment.Center).fillMaxHeight().graphicsLayer(
+            scaleX = if (reduceMotion) 1f else animatedScale,
+            scaleY = if (reduceMotion) 1f else animatedScale
         )
+        if (silhouetteBitmap != null) {
+            Image(
+                bitmap = silhouetteBitmap,
+                contentDescription = "KebTee monochrome silhouette reference wallpaper",
+                modifier = artworkModifier,
+                contentScale = ContentScale.Fit,
+                alpha = if (reduceMotion) 1f else animatedAlpha
+            )
+        } else {
+            // Some emulator/API combinations fail to inflate WebP through Compose's
+            // painterResource path. Keep the dashboard launch-safe with a vector fallback.
+            Image(
+                painter = painterResource(id = R.drawable.ic_kebtee_mark),
+                contentDescription = "KebTee artwork fallback",
+                modifier = artworkModifier.padding(24.dp),
+                contentScale = ContentScale.Fit,
+                alpha = if (reduceMotion) 1f else animatedAlpha
+            )
+        }
         if (reduceMotion) {
             Text(
                 "REDUCED MOTION",
