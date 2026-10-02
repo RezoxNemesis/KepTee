@@ -160,8 +160,8 @@ class MainActivity : ComponentActivity() {
         }
         val notification = android.app.Notification.Builder(this, "kebtee_updates")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("KebTee notification test")
-            .setContentText("Notifications are working on this device.")
+            .setContentTitle("KepTee notification test")
+            .setContentText("KepTee notifications are working on this device.")
             .setAutoCancel(true)
             .build()
         getSystemService(NotificationManager::class.java).notify(1001, notification)
@@ -169,8 +169,8 @@ class MainActivity : ComponentActivity() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel("kebtee_updates", "KebTee updates", NotificationManager.IMPORTANCE_DEFAULT)
-                .apply { description = "Optional updates from KebTee." }
+            val channel = NotificationChannel("kebtee_updates", "KepTee updates", NotificationManager.IMPORTANCE_DEFAULT)
+                .apply { description = "Optional updates from KepTee." }
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
