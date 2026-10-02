@@ -273,8 +273,8 @@ private fun KebTeeHome(
                             Image(
                                 painter = painterResource(id = R.drawable.kebtee_silhouette),
                                 contentDescription = "Prepared KepTee live wallpaper",
-                                modifier = Modifier.matchParentSize(),
-                                contentScale = ContentScale.Crop
+                                modifier = Modifier.matchParentSize().background(Color.Black),
+                                contentScale = ContentScale.Fit
                             )
                             Box(
                                 Modifier.matchParentSize().background(
