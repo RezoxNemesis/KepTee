@@ -38,10 +38,10 @@ else
       adb shell dumpsys activity activities > "app/build/diagnostics/activities-$component.txt" 2>&1
       adb logcat -d -v threadtime > "app/build/diagnostics/logcat-$component.txt" 2>&1
       resumed="$(grep -E 'topResumedActivity|mResumedActivity|Resumed:' "app/build/diagnostics/activities-$component.txt" | grep -F "$package/.$component" || true)"
-      crash="$(grep -E 'FATAL EXCEPTION|AndroidRuntime.*(Exception|Error)|Process: com\\.rezoxnemesis\\.kebtee|Unable to start activity' "app/build/diagnostics/logcat-$component.txt" || true)"
+      crash="$(grep -E 'FATAL EXCEPTION|AndroidRuntime.*(Exception|Error)|Process: com[.]rezoxnemesis[.]kebtee|Unable to start activity' "app/build/diagnostics/logcat-$component.txt" || true)"
       if [ ! -s "app/build/diagnostics/pid-$component.txt" ] || [ -z "$resumed" ] || [ -n "$crash" ]; then
         echo "FAIL: $component did not stay foreground without an app crash." | tee -a app/build/diagnostics/startup-smoke.txt
-        printf '%s\\n' "$resumed" "$crash" >> app/build/diagnostics/startup-smoke.txt
+        printf '%s\n' "$resumed" "$crash" >> app/build/diagnostics/startup-smoke.txt
         smoke_exit=1
       else
         echo "PASS: $component stayed foreground with no detected app crash." | tee -a app/build/diagnostics/startup-smoke.txt
