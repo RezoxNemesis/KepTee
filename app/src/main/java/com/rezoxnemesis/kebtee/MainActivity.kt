@@ -439,6 +439,7 @@ private fun FeatureDialog(
                             var level by remember(stream) {
                                 mutableFloatStateOf(audioManager.getStreamVolume(stream).coerceIn(0, maxVolume).toFloat())
                             }
+                            var volumeChangeRejected by remember(stream) { mutableStateOf(false) }
                             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(label, Modifier.weight(1f), color = Color.White, fontWeight = FontWeight.Medium)
@@ -447,19 +448,30 @@ private fun FeatureDialog(
                                 Slider(
                                     value = level,
                                     onValueChange = { newLevel ->
-                                        level = newLevel
+                                        val requestedLevel = newLevel.roundToInt()
                                         try {
-                                            audioManager.setStreamVolume(stream, newLevel.roundToInt(), 0)
+                                            audioManager.setStreamVolume(stream, requestedLevel, 0)
+                                            // Reflect the platform's accepted value, not just the thumb position.
+                                            level = audioManager.getStreamVolume(stream).coerceIn(0, maxVolume).toFloat()
+                                            volumeChangeRejected = level.roundToInt() != requestedLevel
                                         } catch (_: SecurityException) {
-                                            // OEM restrictions may prevent changing a particular stream.
+                                            level = audioManager.getStreamVolume(stream).coerceIn(0, maxVolume).toFloat()
+                                            volumeChangeRejected = true
                                         } catch (_: IllegalArgumentException) {
-                                            // Some Android builds do not expose every stream equally.
+                                            level = audioManager.getStreamVolume(stream).coerceIn(0, maxVolume).toFloat()
+                                            volumeChangeRejected = true
                                         }
                                     },
                                     valueRange = 0f..maxVolume.toFloat(),
                                     steps = (maxVolume - 1).coerceAtLeast(0),
                                     modifier = Modifier.fillMaxWidth()
                                 )
+                                if (volumeChangeRejected) {
+                                    Text(
+                                        "Android did not apply that volume level. The slider shows the actual device value.",
+                                        color = Color(0xFFFFB4AB), fontSize = 11.sp, lineHeight = 14.sp
+                                    )
+                                }
                             }
                         }
                         Text("Note: some Android versions merge ring and notification volume.", color = Muted, fontSize = 11.sp)
