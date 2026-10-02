@@ -330,7 +330,7 @@ private fun AnimatedWallpaperPreview(
     reducedMotion: Boolean
 ) {
     val context = LocalContext.current
-    val silhouette = remember(context) { BitmapFactory.decodeResource(context.resources, R.drawable.kebtee_silhouette) }
+    val silhouette = remember(context) { loadKebTeeSilhouette(context) }
     val bitmap = remember(scene.id) {
         Bitmap.createBitmap(720, 405, Bitmap.Config.ARGB_8888)
     }
