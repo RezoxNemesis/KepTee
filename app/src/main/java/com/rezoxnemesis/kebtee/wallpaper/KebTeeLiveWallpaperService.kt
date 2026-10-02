@@ -1,7 +1,6 @@
 package com.rezoxnemesis.kebtee.wallpaper
 
 import android.content.SharedPreferences
-import android.graphics.BitmapFactory
 import com.rezoxnemesis.kebtee.R
 import android.graphics.Canvas
 import android.os.Handler
@@ -20,7 +19,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         private val wallpaperPrefs = WallpaperPreferences(this@KebTeeLiveWallpaperService)
         private val wallpaperStore = getSharedPreferences("kebtee_wallpaper", MODE_PRIVATE)
         private val globalPrefs = getSharedPreferences("kebtee_preferences", MODE_PRIVATE)
-        private val renderer by lazy { WallpaperRenderer(BitmapFactory.decodeResource(this@KebTeeLiveWallpaperService.resources, R.drawable.kebtee_silhouette)) }
+        private val renderer by lazy { WallpaperRenderer(loadKebTeeSilhouette(this@KebTeeLiveWallpaperService)) }
         @Volatile private var visible = false
         @Volatile private var scene = WallpaperCatalog.scenes.first()
         @Volatile private var settings = WallpaperSettings()
