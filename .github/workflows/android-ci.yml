@@ -61,9 +61,21 @@ jobs:
           api-level: 36
           target: google_apis
           arch: x86_64
+          disk-size: 2048M
+          ram-size: 2048M
+          heap-size: 512M
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           emulator-boot-timeout: 900
           disable-animations: true
+          pre-emulator-launch-script: |
+            set -e
+            # APK is already built. Free Gradle/NDK/CMake caches before the
+            # Android 16 emulator creates its userdata partition.
+            SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+            rm -rf "$HOME/.gradle/caches" "$HOME/.gradle/wrapper/dists" "$GITHUB_WORKSPACE/.gradle"
+            rm -rf "$SDK_ROOT/ndk" "$SDK_ROOT/cmake"
+            find "$GITHUB_WORKSPACE/app/build" -mindepth 1 -maxdepth 1 ! -name outputs -exec rm -rf {} + 2>/dev/null || true
+            df -h "$HOME"
           script: |
             adb wait-for-device
             adb shell getprop sys.boot_completed
