@@ -18,7 +18,7 @@ class DashboardNavigationTest {
         compose.onNodeWithText("Control Center").performScrollTo().assertIsDisplayed().performClick()
         compose.onNodeWithText("Done").assertIsDisplayed().performClick()
         compose.onNodeWithText("Theme Studio").performScrollTo().performClick()
-        compose.onNodeWithText("Cyber cyan").assertIsDisplayed().performClick()
+        compose.onNodeWithText("Cyber cyan").performScrollTo().assertIsDisplayed().performClick()
         compose.onNodeWithText("Done").performClick()
     }
 }
