@@ -2,6 +2,7 @@ package com.rezoxnemesis.kebtee.wallpaper
 
 object WallpaperCatalog {
     val scenes: List<WallpaperScene> = listOf(
+        scene("keptee-silhouette", "KepTee Silhouette", WallpaperCategory.SILHOUETTE, WallpaperRendererType.SILHOUETTE, 0xFF000000, 0xFF070B18, 0xFF22D3EE, BatteryProfile.LOW, true),
         scene("aurora-01", "Arctic Veil", WallpaperCategory.AURORA, WallpaperRendererType.AURORA, 0xFF14213D, 0xFF2E86AB, 0xFF9AE6B4, BatteryProfile.BALANCED, true),
         scene("aurora-02", "Polar Bloom", WallpaperCategory.AURORA, WallpaperRendererType.AURORA, 0xFF101B3D, 0xFF7C3AED, 0xFF67E8F9, BatteryProfile.BALANCED, true),
         scene("aurora-03", "Violet Dawn", WallpaperCategory.AURORA, WallpaperRendererType.AURORA, 0xFF24104F, 0xFFBE185D, 0xFFF0ABFC, BatteryProfile.BALANCED, true),
