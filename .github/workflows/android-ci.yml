@@ -62,49 +62,7 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: true
-          script: |
-            set +e
-            mkdir -p app/build/diagnostics
-            adb wait-for-device
-            boot_state=""
-            for attempt in $(seq 1 60); do
-              boot_state="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
-              [ "$boot_state" = "1" ] && break
-              sleep 2
-            done
-            smoke_exit=0
-            if [ "$boot_state" != "1" ]; then
-              echo "Emulator did not finish booting within 120 seconds." | tee app/build/diagnostics/startup-smoke.txt
-              smoke_exit=1
-            else
-              adb logcat -c
-              adb install -r app/build/outputs/apk/debug/app-debug.apk > app/build/diagnostics/install.txt 2>&1
-              if [ $? -ne 0 ]; then
-                cat app/build/diagnostics/install.txt
-                smoke_exit=1
-              else
-                for component in MainActivity HomeLauncherActivity; do
-                  package="com.rezoxnemesis.kebtee"
-                  echo "Launching $component" | tee -a app/build/diagnostics/startup-smoke.txt
-                  adb shell am force-stop "$package"
-                  adb shell am start -W -n "$package/.$component" > "app/build/diagnostics/launch-$component.txt" 2>&1
-                  launch_status=$?
-                  cat "app/build/diagnostics/launch-$component.txt"
-                  sleep 5
-                  adb shell pidof "$package" > "app/build/diagnostics/pid-$component.txt" 2>&1
-                  if [ "$launch_status" -ne 0 ] || [ ! -s "app/build/diagnostics/pid-$component.txt" ]; then
-                    echo "FAIL: $component did not remain running after launch." | tee -a app/build/diagnostics/startup-smoke.txt
-                    smoke_exit=1
-                  else
-                    echo "PASS: $component process remained alive." | tee -a app/build/diagnostics/startup-smoke.txt
-                  fi
-                done
-              fi
-            fi
-            adb logcat -d -v threadtime > app/build/diagnostics/emulator-logcat.txt 2>&1
-            echo "$smoke_exit" > app/build/diagnostics/startup-smoke-exit-code.txt
-            grep -E "FATAL EXCEPTION|AndroidRuntime|Process: com\.rezoxnemesis\.kebtee|Fatal signal|Unable to start activity|Caused by:" app/build/diagnostics/emulator-logcat.txt | tail -n 100 || true
-            exit "$smoke_exit"
+          script: bash .github/scripts/startup-smoke.sh
       - name: Upload emulator diagnostics
         if: always()
         uses: actions/upload-artifact@v4
