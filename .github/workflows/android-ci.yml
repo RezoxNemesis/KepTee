@@ -48,7 +48,7 @@ jobs:
           fi
           echo "$SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
       - name: Install Android SDK packages
-        run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+        run: sdkmanager --install "platforms;android-35" "platforms;android-36" "build-tools;35.0.0"
       - name: Assemble debug APK
         run: gradle --no-daemon assembleDebug
       - name: Run unit tests
@@ -58,7 +58,7 @@ jobs:
       - name: Launch activities in Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: 36
           target: google_apis
           arch: x86_64
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
