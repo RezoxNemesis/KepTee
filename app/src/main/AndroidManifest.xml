@@ -6,7 +6,7 @@
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:label="KebTee"
+        android:label="KepTee"
         android:supportsRtl="true"
         android:theme="@style/Theme.KebTee">
         <activity
@@ -20,19 +20,19 @@
         <activity android:name=".wallpaper.WallpaperStudioActivity" android:exported="false" android:label="Wallpaper Studio" />
         <service
             android:name=".notifications.KebTeeNotificationListenerService"
-            android:label="KebTee Notification Access"
+            android:label="KepTee Notification Access"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
-        <activity android:name=".HomeLauncherActivity" android:exported="true" android:label="KebTee Home">
+        <activity android:name=".HomeLauncherActivity" android:exported="true" android:label="KepTee Home">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.HOME" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>
         </activity>
         <service
             android:name=".wallpaper.KebTeeLiveWallpaperService"
-            android:label="KebTee Silhouette"
+            android:label="KepTee Silhouette"
             android:permission="android.permission.BIND_WALLPAPER"
             android:exported="true">
             <intent-filter>
