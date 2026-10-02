@@ -56,6 +56,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import com.rezoxnemesis.kebtee.wallpaper.KebTeeLiveWallpaperService
+import com.rezoxnemesis.kebtee.wallpaper.WallpaperStudioActivity
+import com.rezoxnemesis.kebtee.notifications.NotificationFeedStore
+import com.rezoxnemesis.kebtee.themes.ThemePresets
+import androidx.compose.ui.platform.LocalContext
 
 private val Night = Color(0xFF070B18)
 private val Panel = Color(0xFF11182B)
@@ -111,7 +115,7 @@ class MainActivity : ComponentActivity() {
                         accent = it
                         preferences.edit().putString("accent", preferenceForAccent(it)).apply()
                     },
-                    onLiveWallpaper = { openWallpaperPicker() },
+                    onLiveWallpaper = { startActivity(Intent(this@MainActivity, WallpaperStudioActivity::class.java)) },
                     onTestNotification = { showTestNotification() },
                     onOpenSystemSettings = { action ->
                         if (action == "notifications") openNotificationControls() else openSystemSettings(action)
@@ -178,6 +182,7 @@ class MainActivity : ComponentActivity() {
             "bluetooth" -> Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
             "brightness" -> Intent(Settings.ACTION_DISPLAY_SETTINGS)
             "display" -> Intent(Settings.ACTION_DISPLAY_SETTINGS)
+            "notification_listener" -> Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
             else -> Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
         }
         try {
@@ -402,19 +407,22 @@ private fun FeatureDialog(
             ) {
                 when (feature.action) {
                     FeatureAction.THEME -> {
-                        Text("Choose the accent used across KebTee. Your choice updates the interface immediately.")
-                        listOf(Violet to "Ultraviolet", Cyan to "Cyber cyan", Pink to "Pulse pink", Green to "Mint circuit").forEach { (color, label) ->
+                        Text("Choose a reusable visual preset. Applying a preset changes the live accent immediately and stores the choice locally.")
+                        ThemePresets.builtIns.forEach { preset ->
                             Surface(
-                                Modifier.fillMaxWidth().clickable { onAccentChange(color) },
+                                Modifier.fillMaxWidth().clickable { onAccentChange(preset.accent) },
                                 shape = RoundedCornerShape(14.dp),
-                                color = if (selectedAccent == color) color.copy(alpha = 0.18f) else Color(0xFF1A2439),
-                                border = BorderStroke(1.dp, if (selectedAccent == color) color else Color(0xFF2B3854))
+                                color = if (selectedAccent == preset.accent) preset.accent.copy(alpha = 0.18f) else Color(0xFF1A2439),
+                                border = BorderStroke(1.dp, if (selectedAccent == preset.accent) preset.accent else Color(0xFF2B3854))
                             ) {
                                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Box(Modifier.size(20.dp).background(color, CircleShape))
+                                    Box(Modifier.size(20.dp).background(preset.accent, CircleShape))
                                     Spacer(Modifier.width(10.dp))
-                                    Text(label, Modifier.weight(1f), color = Color.White)
-                                    if (selectedAccent == color) Icon(Icons.Default.Check, contentDescription = "Selected", tint = color)
+                                    Column(Modifier.weight(1f)) {
+                                        Text(preset.name, color = Color.White, fontWeight = FontWeight.Medium)
+                                        Text("Motion profile ${(preset.motionIntensity * 100).roundToInt()}%", color = Muted, fontSize = 10.sp)
+                                    }
+                                    if (selectedAccent == preset.accent) Icon(Icons.Default.Check, contentDescription = "Selected", tint = preset.accent)
                                 }
                             }
                         }
@@ -465,15 +473,42 @@ private fun FeatureDialog(
                         Text("Note: some Android versions merge ring and notification volume.", color = Muted, fontSize = 11.sp)
                     }
                     FeatureAction.NOTIFICATIONS -> {
-                        Text("Send a real test notification to verify KebTee's notification channel, or open Android settings to adjust permission and alerts.")
-                        Button(
-                            onClick = { onTestNotification(); onDismiss() },
-                            modifier = Modifier.fillMaxWidth()
-                        ) { Text("Send test notification") }
-                        OutlinedButton(
-                            onClick = { onOpenSystemSettings("notifications"); onDismiss() },
-                            modifier = Modifier.fillMaxWidth()
-                        ) { Text("Notification settings") }
+                        val context = LocalContext.current
+                        val feed = remember(feature.action) { NotificationFeedStore.list(context).take(8) }
+                        Text(
+                            "KebTee can send its own notifications or, after explicit Android Notification Access permission, show a local feed of recent notifications. The system notification shade remains owned by Android.",
+                            color = Muted, fontSize = 12.sp, lineHeight = 17.sp
+                        )
+                        Button(onClick = { onTestNotification(); onDismiss() }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Send test notification")
+                        }
+                        OutlinedButton(onClick = { onOpenSystemSettings("notifications"); onDismiss() }, modifier = Modifier.fillMaxWidth()) {
+                            Text("App notification settings")
+                        }
+                        OutlinedButton(onClick = { onOpenSystemSettings("notification_listener"); onDismiss() }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Enable notification access")
+                        }
+                        if (feed.isNotEmpty()) {
+                            Text("Recent notifications", color = Color.White, fontWeight = FontWeight.SemiBold)
+                            feed.forEach { item ->
+                                Surface(
+                                    Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = Color(0xFF1A2439),
+                                    border = BorderStroke(1.dp, Color(0xFF2B3854))
+                                ) {
+                                    Column(Modifier.padding(11.dp)) {
+                                        Text(item.appLabel, color = Cyan, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        Text(item.title.ifBlank { "Notification" }, color = Color.White, fontWeight = FontWeight.Medium)
+                                        if (item.text.isNotBlank()) {
+                                            Text(item.text, color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            Text("No listener-feed items yet. Enable notification access, then reopen this panel after notifications arrive.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
+                        }
                     }
                     FeatureAction.MOTION -> {
                         Text("Reduce visual motion in KebTee's preview. The live wallpaper service also pauses drawing when it isn't visible.")
