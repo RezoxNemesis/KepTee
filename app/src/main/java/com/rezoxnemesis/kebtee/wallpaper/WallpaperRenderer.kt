@@ -1,5 +1,6 @@
 package com.rezoxnemesis.kebtee.wallpaper
 
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
@@ -23,7 +24,7 @@ data class WallpaperRenderState(
     val batteryMode: Boolean = false
 )
 
-class WallpaperRenderer {
+class WallpaperRenderer(private val silhouetteBitmap: Bitmap? = null) {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val path = Path()
 
@@ -42,6 +43,7 @@ class WallpaperRenderer {
             WallpaperRendererType.NATURE -> drawNature(canvas, scene, time, intensity, motion)
             WallpaperRendererType.AMOLED_GLOW -> drawAmoled(canvas, scene, time, intensity, motion)
             WallpaperRendererType.PARTICLE_FLOW -> drawParticleFlow(canvas, scene, time, intensity, motion)
+            WallpaperRendererType.SILHOUETTE -> drawSilhouette(canvas, time, intensity, motion)
         }
     }
 
@@ -272,6 +274,24 @@ class WallpaperRenderer {
             paint.color = withAlpha(scene.palette.accent, 0.18f + WallpaperRenderMath.seedUnit(seed + i * 71) * 0.70f)
             canvas.drawCircle(x, y, radius, paint)
         }
+    }
+
+    private fun drawSilhouette(canvas: Canvas, time: Float, intensity: Float, motion: Float) {
+        canvas.drawColor(Color.BLACK)
+        val bitmap = silhouetteBitmap ?: return
+        val width = canvas.width.toFloat()
+        val height = canvas.height.toFloat()
+        if (bitmap.width <= 0 || bitmap.height <= 0 || width <= 0f || height <= 0f) return
+        val scale = maxOf(width / bitmap.width, height / bitmap.height)
+        val pulse = 1f + 0.008f * sin((time * 0.5f * 2f * PI).toFloat()) * motion
+        val drawWidth = bitmap.width * scale * pulse
+        val drawHeight = bitmap.height * scale * pulse
+        val driftX = sin((time * 0.12f * 2f * PI).toFloat()) * width * 0.006f * motion
+        val left = (width - drawWidth) / 2f + driftX
+        val top = (height - drawHeight) / 2f
+        paint.alpha = (220f + 28f * intensity.coerceIn(0f, 1f)).toInt().coerceIn(0, 255)
+        canvas.drawBitmap(bitmap, null, RectF(left, top, left + drawWidth, top + drawHeight), paint)
+        paint.alpha = 255
     }
 
     private fun fillGradient(canvas: Canvas, start: Int, end: Int, vertical: Boolean) {
