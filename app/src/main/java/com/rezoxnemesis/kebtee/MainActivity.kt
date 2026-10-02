@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush as UiBrush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -59,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import com.rezoxnemesis.kebtee.wallpaper.KebTeeLiveWallpaperService
 import com.rezoxnemesis.kebtee.wallpaper.WallpaperStudioActivity
+import com.rezoxnemesis.kebtee.wallpaper.loadKebTeeSilhouette
 import com.rezoxnemesis.kebtee.notifications.NotificationFeedStore
 import com.rezoxnemesis.kebtee.themes.ThemePresets
 import androidx.compose.ui.platform.LocalContext
@@ -209,6 +211,10 @@ private fun KebTeeHome(
     onTestNotification: () -> Unit,
     onOpenSystemSettings: (String) -> Unit
 ) {
+    val context = LocalContext.current
+    // Prefer the prepared wallpaper bitmap; the shared loader falls back safely if Android
+    // cannot decode that WebP resource on a particular device.
+    val wallpaperArtwork = remember(context) { loadKebTeeSilhouette(context).asImageBitmap() }
     var selectedFeature by remember { mutableStateOf<Feature?>(null) }
     var activeTab by remember { mutableStateOf("Home") }
     val features = listOf(
@@ -271,7 +277,7 @@ private fun KebTeeHome(
                     Column {
                         Box(Modifier.fillMaxWidth().height(186.dp)) {
                             Image(
-                                painter = painterResource(id = R.drawable.kebtee_silhouette_art),
+                                bitmap = wallpaperArtwork,
                                 contentDescription = "Prepared KepTee live wallpaper",
                                 modifier = Modifier.matchParentSize().background(Color.Black),
                                 contentScale = ContentScale.Fit
@@ -467,7 +473,7 @@ private fun SilhouettePreview(reduceMotion: Boolean) {
             .background(Color.Black, RoundedCornerShape(18.dp))
     ) {
         Image(
-            painter = painterResource(id = R.drawable.kebtee_silhouette_art),
+            bitmap = wallpaperArtwork,
             contentDescription = "KepTee monochrome silhouette reference wallpaper",
             modifier = Modifier.align(Alignment.Center).fillMaxHeight().graphicsLayer(
                 scaleX = if (reduceMotion) 1f else animatedScale,
