@@ -271,7 +271,7 @@ private fun KebTeeHome(
                     Column {
                         Box(Modifier.fillMaxWidth().height(186.dp)) {
                             Image(
-                                painter = painterResource(id = R.drawable.kebtee_silhouette),
+                                painter = painterResource(id = R.drawable.kebtee_silhouette_art),
                                 contentDescription = "Prepared KepTee live wallpaper",
                                 modifier = Modifier.matchParentSize().background(Color.Black),
                                 contentScale = ContentScale.Fit
@@ -467,7 +467,7 @@ private fun SilhouettePreview(reduceMotion: Boolean) {
             .background(Color.Black, RoundedCornerShape(18.dp))
     ) {
         Image(
-            painter = painterResource(id = R.drawable.kebtee_silhouette),
+            painter = painterResource(id = R.drawable.kebtee_silhouette_art),
             contentDescription = "KepTee monochrome silhouette reference wallpaper",
             modifier = Modifier.align(Alignment.Center).fillMaxHeight().graphicsLayer(
                 scaleX = if (reduceMotion) 1f else animatedScale,
