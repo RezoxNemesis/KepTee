@@ -2,7 +2,6 @@ package com.rezoxnemesis.kebtee.wallpaper
 
 import android.app.WallpaperManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import com.rezoxnemesis.kebtee.R
 import android.graphics.Canvas as AndroidCanvas
 import android.content.ComponentName
@@ -298,7 +297,7 @@ private fun StaticWallpaperPreview(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val silhouette = remember(context) { BitmapFactory.decodeResource(context.resources, R.drawable.kebtee_silhouette) }
+    val silhouette = remember(context) { loadKebTeeSilhouette(context) }
     val bitmap = remember(scene.id, silhouette) {
         Bitmap.createBitmap(720, 480, Bitmap.Config.ARGB_8888).also {
             WallpaperRenderer(silhouette).draw(
