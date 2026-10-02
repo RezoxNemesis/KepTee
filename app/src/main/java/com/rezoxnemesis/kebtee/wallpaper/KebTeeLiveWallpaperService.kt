@@ -1,41 +1,34 @@
 package com.rezoxnemesis.kebtee.wallpaper
 
 import android.content.SharedPreferences
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
-import android.graphics.Paint
-import android.graphics.RectF
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.SystemClock
 import android.service.wallpaper.WallpaperService
 import android.view.SurfaceHolder
-import com.rezoxnemesis.kebtee.R
 
-/** Uses the bundled reference artwork directly and adds only a gentle, seamless breathing animation. */
+/** Renders the selected built-in procedural scene without network access. */
 class KebTeeLiveWallpaperService : WallpaperService() {
-    override fun onCreateEngine(): Engine = SilhouetteEngine()
+    override fun onCreateEngine(): Engine = SceneEngine()
 
-    private inner class SilhouetteEngine : Engine() {
-        private val renderThread = HandlerThread("KebTeeSilhouetteRenderer").apply { start() }
+    private inner class SceneEngine : Engine() {
+        private val renderThread = HandlerThread("KebTeeWallpaperRenderer").apply { start() }
         private val handler = Handler(renderThread.looper)
+        private val wallpaperPrefs = WallpaperPreferences(this@KebTeeLiveWallpaperService)
+        private val wallpaperStore = getSharedPreferences("kebtee_wallpaper", MODE_PRIVATE)
+        private val globalPrefs = getSharedPreferences("kebtee_preferences", MODE_PRIVATE)
+        private val renderer = WallpaperRenderer()
         @Volatile private var visible = false
-        private val preferences = getSharedPreferences("kebtee_preferences", MODE_PRIVATE)
-        @Volatile private var reduceMotion = preferences.getBoolean("reduce_motion", false)
-        private val figureBitmap: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.kebtee_silhouette)
-        private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
-        private val startedAt = SystemClock.uptimeMillis()
-        private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == "reduce_motion") {
-                reduceMotion = preferences.getBoolean("reduce_motion", false)
-                if (visible) {
-                    handler.removeCallbacks(drawFrame)
-                    handler.post(drawFrame)
-                }
+        @Volatile private var scene = WallpaperCatalog.scenes.first()
+        @Volatile private var settings = WallpaperSettings()
+        private var startedAt = SystemClock.uptimeMillis()
+
+        private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+            reloadState()
+            if (visible) {
+                handler.removeCallbacks(drawFrame)
+                handler.post(drawFrame)
             }
         }
 
@@ -44,19 +37,25 @@ class KebTeeLiveWallpaperService : WallpaperService() {
                 if (!visible) return
                 drawScene()
                 handler.removeCallbacks(this)
-                if (visible && !reduceMotion) handler.postDelayed(this, FRAME_INTERVAL_MS)
+                val batteryInterval = if (settings.batteryMode) 66L else 33L
+                if (visible && !settings.reducedMotion) handler.postDelayed(this, batteryInterval)
             }
         }
 
         override fun onCreate(surfaceHolder: SurfaceHolder) {
             super.onCreate(surfaceHolder)
-            preferences.registerOnSharedPreferenceChangeListener(preferenceListener)
+            wallpaperStore.registerOnSharedPreferenceChangeListener(preferenceListener)
+            globalPrefs.registerOnSharedPreferenceChangeListener(preferenceListener)
+            reloadState()
         }
 
         override fun onVisibilityChanged(isVisible: Boolean) {
             visible = isVisible
             handler.removeCallbacks(drawFrame)
-            if (visible) handler.post(drawFrame)
+            if (visible) {
+                startedAt = SystemClock.uptimeMillis()
+                handler.post(drawFrame)
+            }
         }
 
         override fun onSurfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
@@ -76,55 +75,52 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         override fun onDestroy() {
             visible = false
             handler.removeCallbacks(drawFrame)
-            preferences.unregisterOnSharedPreferenceChangeListener(preferenceListener)
+            wallpaperStore.unregisterOnSharedPreferenceChangeListener(preferenceListener)
+            globalPrefs.unregisterOnSharedPreferenceChangeListener(preferenceListener)
             renderThread.quitSafely()
             super.onDestroy()
+        }
+
+        private fun reloadState() {
+            val selected = WallpaperCatalog.byId(wallpaperPrefs.selectedSceneId()) ?: WallpaperCatalog.scenes.first()
+            val saved = wallpaperPrefs.settingsFor(selected.id)
+            scene = selected
+            settings = saved.copy(reducedMotion = saved.reducedMotion || globalPrefs.getBoolean("reduce_motion", false))
+            startedAt = SystemClock.uptimeMillis()
         }
 
         private fun drawScene() {
             var canvas: Canvas? = null
             try {
                 canvas = surfaceHolder.lockCanvas() ?: return
-                val width = canvas.width.toFloat()
-                val height = canvas.height.toFloat()
-                if (width <= 0f || height <= 0f) return
-                canvas.drawColor(Color.BLACK)
-
-                val seconds = if (reduceMotion) 0f else (SystemClock.uptimeMillis() - startedAt) / 1000f
-                val pulse = if (reduceMotion) 1f else SilhouetteAnimationMath.breathingPulse(seconds)
-                val pulseAmount = ((pulse - 0.82f) / 0.18f).coerceIn(0f, 1f)
-                val breathingScale = if (reduceMotion) 1f else 0.86f + pulseAmount * 0.012f
-                val fitScale = maxOf(width / figureBitmap.width, height / figureBitmap.height) * breathingScale
-                val destWidth = figureBitmap.width * fitScale
-                val destHeight = figureBitmap.height * fitScale
-                val destination = RectF(
-                    (width - destWidth) / 2f,
-                    (height - destHeight) / 2f,
-                    (width + destWidth) / 2f,
-                    (height + destHeight) / 2f
+                val width = canvas.width
+                val height = canvas.height
+                if (width <= 0 || height <= 0) return
+                val seconds = (SystemClock.uptimeMillis() - startedAt) / 1000f
+                renderer.draw(
+                    canvas,
+                    scene,
+                    WallpaperRenderState(
+                        width = width,
+                        height = height,
+                        timeSeconds = seconds,
+                        speed = settings.speed,
+                        intensity = settings.intensity,
+                        reducedMotion = settings.reducedMotion,
+                        batteryMode = settings.batteryMode
+                    )
                 )
-
-                // The original image remains the source. Only its brightness and scale breathe gently.
-                val brightness = if (reduceMotion) 1f else 0.72f + pulseAmount * 0.28f
-                paint.colorFilter = ColorMatrixColorFilter(ColorMatrix(floatArrayOf(
-                    brightness, 0f, 0f, 0f, 0f,
-                    0f, brightness, 0f, 0f, 0f,
-                    0f, 0f, brightness, 0f, 0f,
-                    0f, 0f, 0f, 1f, 0f
-                )))
-                canvas.drawBitmap(figureBitmap, null, destination, paint)
-                paint.colorFilter = null
             } catch (_: Exception) {
-                // Android can destroy the wallpaper surface during launcher transitions.
+                // Surface lifecycle can race launcher transitions; the next frame recovers.
             } finally {
                 if (canvas != null) {
-                    try { surfaceHolder.unlockCanvasAndPost(canvas) } catch (_: Exception) { }
+                    try {
+                        surfaceHolder.unlockCanvasAndPost(canvas)
+                    } catch (_: Exception) {
+                        // Surface may have been destroyed between lock and post.
+                    }
                 }
             }
         }
-    }
-
-    private companion object {
-        const val FRAME_INTERVAL_MS = 33L
     }
 }

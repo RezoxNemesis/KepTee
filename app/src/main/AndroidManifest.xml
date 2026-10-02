@@ -17,6 +17,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".wallpaper.WallpaperStudioActivity" android:exported="false" android:label="Wallpaper Studio" />
+        <service
+            android:name=".notifications.KebTeeNotificationListenerService"
+            android:label="KebTee Notification Access"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
         <activity android:name=".HomeLauncherActivity" android:exported="true" android:label="KebTee Home">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.HOME" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>
         </activity>
