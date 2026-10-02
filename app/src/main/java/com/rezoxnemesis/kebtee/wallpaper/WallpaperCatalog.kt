@@ -38,7 +38,18 @@ object WallpaperCatalog {
         scene("particle-01", "Particle Rain", WallpaperCategory.PARTICLE, WallpaperRendererType.PARTICLE_FLOW, 0xFF020617, 0xFF0F172A, 0xFF22D3EE, BatteryProfile.ACTIVE, true),
         scene("particle-02", "Stardust", WallpaperCategory.PARTICLE, WallpaperRendererType.PARTICLE_FLOW, 0xFF030712, 0xFF172554, 0xFFF8FAFC, BatteryProfile.ACTIVE, true),
         scene("particle-03", "Rose Dust", WallpaperCategory.PARTICLE, WallpaperRendererType.PARTICLE_FLOW, 0xFF12050C, 0xFF4C0519, 0xFFF9A8D4, BatteryProfile.ACTIVE, true),
-        scene("particle-04", "Emerald Drift", WallpaperCategory.PARTICLE, WallpaperRendererType.PARTICLE_FLOW, 0xFF02120A, 0xFF14532D, 0xFF6EE7B7, BatteryProfile.BALANCED, true)
+        scene("particle-04", "Emerald Drift", WallpaperCategory.PARTICLE, WallpaperRendererType.PARTICLE_FLOW, 0xFF02120A, 0xFF14532D, 0xFF6EE7B7, BatteryProfile.BALANCED, true),
+
+        scene("aurora-05", "Glacier Bloom", WallpaperCategory.AURORA, WallpaperRendererType.AURORA, 0xFF061A2B, 0xFF2563EB, 0xFFA5F3FC, BatteryProfile.LOW, true),
+        scene("aurora-06", "Solar Aurora", WallpaperCategory.AURORA, WallpaperRendererType.AURORA, 0xFF160B24, 0xFF9D174D, 0xFFFDE68A, BatteryProfile.BALANCED, false),
+        scene("neon-05", "Cyber Lagoon", WallpaperCategory.NEON, WallpaperRendererType.NEON_GRID, 0xFF020B1A, 0xFF0369A1, 0xFF67E8F9, BatteryProfile.ACTIVE, true),
+        scene("neon-06", "Ultraviolet Run", WallpaperCategory.NEON, WallpaperRendererType.NEON_GRID, 0xFF10051F, 0xFF6D28D9, 0xFFF0ABFC, BatteryProfile.ACTIVE, true),
+        scene("fluid-05", "Opal Current", WallpaperCategory.FLUID, WallpaperRendererType.FLUID_WAVES, 0xFF081225, 0xFF0F766E, 0xFF99F6E4, BatteryProfile.BALANCED, true),
+        scene("geometry-05", "Satin Prism", WallpaperCategory.GEOMETRY, WallpaperRendererType.GEOMETRY, 0xFF0C1020, 0xFF4338CA, 0xFFF5D0FE, BatteryProfile.LOW, true),
+        scene("space-05", "Nebula Gate", WallpaperCategory.SPACE, WallpaperRendererType.SPACE, 0xFF08051B, 0xFF4C1D95, 0xFFF0ABFC, BatteryProfile.BALANCED, true),
+        scene("nature-04", "Mosslight", WallpaperCategory.NATURE, WallpaperRendererType.NATURE, 0xFF06120B, 0xFF3F6212, 0xFFD9F99D, BatteryProfile.LOW, true),
+        scene("amoled-04", "Obsidian Flame", WallpaperCategory.AMOLED, WallpaperRendererType.AMOLED_GLOW, 0xFF000000, 0xFF292015, 0xFFFBBF24, BatteryProfile.LOW, true),
+        scene("particle-05", "Blue Comet Dust", WallpaperCategory.PARTICLE, WallpaperRendererType.PARTICLE_FLOW, 0xFF020617, 0xFF1E3A8A, 0xFFBAE6FD, BatteryProfile.ACTIVE, true)
     )
 
     fun byId(id: String): WallpaperScene? = scenes.firstOrNull { it.id == id }
