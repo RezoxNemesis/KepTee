@@ -88,7 +88,7 @@ class HomeLauncherActivity : ComponentActivity() {
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text("KebTee", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+                            Text("KepTee", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
                             Text(if (showAllApps) "YOUR SPACE. YOUR APPS." else "YOUR SPACE. YOUR FAVOURITES.", color = cyan, fontSize = 10.sp, letterSpacing = 1.4.sp)
                         }
                         Surface(color = Color(0xFF182440), shape = RoundedCornerShape(18.dp)) {
@@ -96,7 +96,7 @@ class HomeLauncherActivity : ComponentActivity() {
                         }
                         Spacer(Modifier.width(6.dp))
                         IconButton(onClick = { startActivity(Intent(this@HomeLauncherActivity, MainActivity::class.java)) }) {
-                            Icon(Icons.Default.Settings, contentDescription = "Open KebTee customization dashboard", tint = cyan)
+                            Icon(Icons.Default.Settings, contentDescription = "Open KepTee customization dashboard", tint = cyan)
                         }
                     }
 
