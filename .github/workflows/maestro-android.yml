@@ -1,4 +1,4 @@
-name: KepTee Maestro Android UI Tests
+name: KepTee Android Emulator UI Smoke Tests
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
       - "app/**"
       - ".maestro/**"
       - ".github/workflows/maestro-android.yml"
-      - ".github/scripts/run-maestro-ui.sh"
+      - ".github/scripts/startup-smoke.sh"
       - "*.gradle.kts"
       - "settings.gradle.kts"
       - "gradle/**"
@@ -16,7 +16,7 @@ on:
       - "app/**"
       - ".maestro/**"
       - ".github/workflows/maestro-android.yml"
-      - ".github/scripts/run-maestro-ui.sh"
+      - ".github/scripts/startup-smoke.sh"
       - "*.gradle.kts"
       - "settings.gradle.kts"
       - "gradle/**"
@@ -81,15 +81,17 @@ jobs:
           script: |
             adb wait-for-device
             adb shell getprop sys.boot_completed
-            bash .github/scripts/run-maestro-ui.sh
+            bash .github/scripts/startup-smoke.sh
+            gradle --no-daemon connectedDebugAndroidTest
 
-      - name: Upload UI test evidence and crash diagnostics
+      - name: Upload emulator UI test evidence and crash diagnostics
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: keptee-maestro-test-evidence
+          name: keptee-emulator-ui-evidence
           path: |
-            test-results/**
-            ~/.maestro/tests/**
+            app/build/diagnostics/**
+            app/build/reports/androidTests/connected/debug/**
+            app/build/outputs/androidTest-results/connected/**
           if-no-files-found: warn
           retention-days: 7
