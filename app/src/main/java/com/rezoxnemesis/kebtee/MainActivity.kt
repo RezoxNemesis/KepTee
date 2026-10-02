@@ -15,6 +15,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Image
@@ -33,6 +34,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Wallpaper
 import androidx.compose.material3.*
@@ -208,105 +210,215 @@ private fun KebTeeHome(
     onOpenSystemSettings: (String) -> Unit
 ) {
     var selectedFeature by remember { mutableStateOf<Feature?>(null) }
+    var activeTab by remember { mutableStateOf("Home") }
     val features = listOf(
-        Feature("Live Wallpaper", "Animated scenes for your screen", Icons.Default.Wallpaper, Cyan, FeatureAction.WALLPAPER),
-        Feature("Theme Studio", "Choose your KebTee accent", Icons.Default.Palette, Violet, FeatureAction.THEME),
-        Feature("Home Experience", "Open your home-screen settings", Icons.Default.Home, Pink, FeatureAction.HOME),
-        Feature("Volume Lab", "Custom in-app audio sliders", Icons.Default.Tune, Cyan, FeatureAction.VOLUME),
-        Feature("Notifications", "Manage KebTee notifications", Icons.Default.Notifications, Violet, FeatureAction.NOTIFICATIONS),
-        Feature("Effects & Motion", "Set a lighter visual experience", Icons.Default.Bolt, Pink, FeatureAction.MOTION),
-        Feature("Control Center", "Fast access to system panels", Icons.Default.Tune, Green, FeatureAction.CONTROL_CENTER)
+        Feature("Themes", "Color and style", Icons.Default.Palette, Violet, FeatureAction.THEME),
+        Feature("Icons", "Personalize app look", Icons.Default.Brush, Cyan, FeatureAction.THEME),
+        Feature("Volume Lab", "Tune audio streams", Icons.Default.Tune, Pink, FeatureAction.VOLUME),
+        Feature("Motion", "Smooth or reduce effects", Icons.Default.Bolt, Green, FeatureAction.MOTION),
+        Feature("Notifications", "Alerts and permissions", Icons.Default.Notifications, Violet, FeatureAction.NOTIFICATIONS),
+        Feature("Home launcher", "Choose your home app", Icons.Default.Home, Cyan, FeatureAction.HOME),
+        Feature("System tools", "Wi-Fi, display and sound", Icons.Default.Tune, Pink, FeatureAction.CONTROL_CENTER)
     )
 
     Surface(Modifier.fillMaxSize(), color = Night) {
         Column(
             Modifier.fillMaxSize()
-                .background(UiBrush.verticalGradient(listOf(Color(0xFF10172D), Night, Color(0xFF090D1C))))
-                .statusBarsPadding().navigationBarsPadding().padding(horizontal = 20.dp)
+                .background(UiBrush.verticalGradient(listOf(Color(0xFF0B1430), Night, Color(0xFF050812))))
+                .statusBarsPadding()
         ) {
-            Spacer(Modifier.height(18.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                androidx.compose.foundation.Image(
-                    painter = androidx.compose.ui.res.painterResource(id = com.rezoxnemesis.kebtee.R.drawable.ic_kebtee_mark),
-                    contentDescription = "KebTee logo",
-                    modifier = Modifier.size(54.dp)
+            Row(
+                Modifier.fillMaxWidth().padding(start = 20.dp, end = 14.dp, top = 10.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_kebtee_mark),
+                    contentDescription = "KepTee logo",
+                    modifier = Modifier.size(46.dp)
                 )
-                Spacer(Modifier.width(13.dp))
-                Column {
-                    Text("KebTee", fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
-                    Text("MAKE EVERY PIXEL YOURS", fontSize = 10.sp, letterSpacing = 1.8.sp, color = Cyan)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("KepTee", fontSize = 25.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    Text("LIVE BEYOND ORDINARY", fontSize = 9.sp, letterSpacing = 1.5.sp, color = Cyan)
                 }
-                Spacer(Modifier.weight(1f))
-                Surface(shape = CircleShape, color = Color(0xFF14253A), border = BorderStroke(1.dp, Color(0xFF29425B))) {
+                Surface(shape = CircleShape, color = Color(0xFF12233B), border = BorderStroke(1.dp, Color(0xFF29435F))) {
                     Row(Modifier.padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(6.dp).background(Green, CircleShape))
                         Spacer(Modifier.width(6.dp))
-                        Text("BETA", color = Green, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text("READY", color = Green, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.7.sp)
                     }
                 }
             }
 
-            Spacer(Modifier.height(28.dp))
-            Text("Your phone.\nYour atmosphere.", fontSize = 32.sp, lineHeight = 37.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Text("Personalize the screen, then make it work for you.", fontSize = 14.sp, color = Color(0xFFADB8D1), modifier = Modifier.padding(top = 8.dp))
-
-            Spacer(Modifier.height(20.dp))
-            Surface(
-                shape = RoundedCornerShape(28.dp), color = Panel,
-                border = BorderStroke(1.dp, Color(0xFF293451)), modifier = Modifier.fillMaxWidth()
+            Column(
+                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+                    .padding(horizontal = 18.dp)
             ) {
-                Box {
-                    Box(Modifier.matchParentSize().background(
-                        UiBrush.linearGradient(listOf(Color(0xFF263C68), Color(0xFF211A45), Color(0xFF11182B)))
-                    ))
-                    Column(Modifier.padding(20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(Modifier.size(48.dp).background(
-                                UiBrush.linearGradient(listOf(Cyan.copy(alpha = 0.25f), Violet.copy(alpha = 0.35f))),
-                                RoundedCornerShape(16.dp)
-                            ), contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.Wallpaper, contentDescription = null, tint = Cyan, modifier = Modifier.size(27.dp))
+                Spacer(Modifier.height(12.dp))
+                Text("Your screen.\nYour atmosphere.", fontSize = 29.sp, lineHeight = 33.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(
+                    "A calmer space for wallpapers, themes and everyday controls.",
+                    fontSize = 13.sp, lineHeight = 19.sp, color = Muted,
+                    modifier = Modifier.padding(top = 7.dp, bottom = 18.dp)
+                )
+
+                Surface(
+                    shape = RoundedCornerShape(26.dp),
+                    color = Panel,
+                    border = BorderStroke(1.dp, Color(0xFF263B60)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column {
+                        Box(Modifier.fillMaxWidth().height(186.dp)) {
+                            Canvas(Modifier.matchParentSize()) {
+                                drawRect(UiBrush.verticalGradient(listOf(Color(0xFF092B60), Color(0xFF101B43), Color(0xFF080E22))))
+                                drawCircle(
+                                    brush = UiBrush.radialGradient(listOf(Color(0x5522D3EE), Color.Transparent), center = androidx.compose.ui.geometry.Offset(size.width * 0.78f, size.height * 0.36f), radius = size.width * 0.28f),
+                                    radius = size.width * 0.28f,
+                                    center = androidx.compose.ui.geometry.Offset(size.width * 0.78f, size.height * 0.36f)
+                                )
+                                drawCircle(Color(0xFFB7E8FF), radius = size.width * 0.065f, center = androidx.compose.ui.geometry.Offset(size.width * 0.78f, size.height * 0.36f))
+                                val far = androidx.compose.ui.graphics.Path().apply {
+                                    moveTo(0f, size.height * 0.78f)
+                                    lineTo(size.width * 0.18f, size.height * 0.44f)
+                                    lineTo(size.width * 0.32f, size.height * 0.68f)
+                                    lineTo(size.width * 0.51f, size.height * 0.35f)
+                                    lineTo(size.width * 0.77f, size.height * 0.77f)
+                                    lineTo(size.width, size.height * 0.51f)
+                                    lineTo(size.width, size.height)
+                                    lineTo(0f, size.height)
+                                    close()
+                                }
+                                drawPath(far, Color(0xFF174A8B))
+                                val near = androidx.compose.ui.graphics.Path().apply {
+                                    moveTo(0f, size.height * 0.86f)
+                                    lineTo(size.width * 0.26f, size.height * 0.62f)
+                                    lineTo(size.width * 0.45f, size.height * 0.83f)
+                                    lineTo(size.width * 0.72f, size.height * 0.58f)
+                                    lineTo(size.width, size.height * 0.82f)
+                                    lineTo(size.width, size.height)
+                                    lineTo(0f, size.height)
+                                    close()
+                                }
+                                drawPath(near, Color(0xFF07152F))
                             }
-                            Spacer(Modifier.width(12.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text("MONOCHROME / 001", fontSize = 10.sp, letterSpacing = 2.sp, color = Cyan, fontWeight = FontWeight.Bold)
-                                Text("KebTee Silhouette", fontSize = 21.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                Text("Live wallpaper • battery-aware", fontSize = 12.sp, color = Color(0xFFBBC6E0))
+                            Surface(
+                                Modifier.align(Alignment.TopStart).padding(14.dp),
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color(0xCC07162C),
+                                border = BorderStroke(1.dp, Color(0x7738C8FF))
+                            ) {
+                                Text("FEATURED  /  LIVE WALLPAPER", Modifier.padding(horizontal = 10.dp, vertical = 6.dp), color = Cyan, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.7.sp)
+                            }
+                            Column(Modifier.align(Alignment.BottomStart).padding(16.dp)) {
+                                Text("Cinematic night", color = Color.White, fontSize = 21.sp, fontWeight = FontWeight.Bold)
+                                Text("A living sky for your home screen", color = Color(0xFFD1DDF5), fontSize = 11.sp)
                             }
                         }
-                        Spacer(Modifier.height(18.dp))
-                        SilhouettePreview(reduceMotion)
-                        Spacer(Modifier.height(15.dp))
-                        Text("The exact monochrome reference artwork, animated with a subtle continuous breathing pulse.", fontSize = 13.sp, lineHeight = 18.sp, color = Color(0xFFD8E0F5))
-                        Spacer(Modifier.height(17.dp))
-                        Button(
-                            onClick = onLiveWallpaper, modifier = Modifier.fillMaxWidth().height(52.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = accent), shape = RoundedCornerShape(16.dp)
+                        Row(
+                            Modifier.fillMaxWidth().padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.Brush, contentDescription = null)
-                            Spacer(Modifier.width(9.dp))
-                            Text("Choose & Apply Wallpaper", fontWeight = FontWeight.Bold)
+                            Column(Modifier.weight(1f)) {
+                                Text("KepTee Live", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                Text("Subtle motion · AMOLED friendly", color = Muted, fontSize = 10.sp, modifier = Modifier.padding(top = 3.dp))
+                            }
+                            Button(
+                                onClick = onLiveWallpaper,
+                                shape = RoundedCornerShape(14.dp),
+                                contentPadding = PaddingValues(horizontal = 15.dp, vertical = 11.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = accent)
+                            ) {
+                                Icon(Icons.Default.Wallpaper, contentDescription = null, modifier = Modifier.size(17.dp))
+                                Spacer(Modifier.width(7.dp))
+                                Text("Preview", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
+
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Make it yours", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text("Your tools, neatly in one place.", color = Muted, fontSize = 11.sp, modifier = Modifier.padding(top = 3.dp))
+                    }
+                    Text("7 TOOLS", color = Cyan, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                }
+
+                features.chunked(2).forEachIndexed { rowIndex, rowFeatures ->
+                    Row(
+                        Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        rowFeatures.forEach { feature ->
+                            MinimalFeatureCard(
+                                feature = feature,
+                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    if (feature.action == FeatureAction.WALLPAPER) onLiveWallpaper() else selectedFeature = feature
+                                }
+                            )
+                        }
+                        if (rowFeatures.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+
+                Surface(
+                    Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 18.dp),
+                    color = Color(0xFF0D1527),
+                    shape = RoundedCornerShape(18.dp),
+                    border = BorderStroke(1.dp, Color(0xFF202D47))
+                ) {
+                    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(38.dp).background(Color(0x1F22D3EE), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Check, contentDescription = null, tint = Cyan)
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("Built around your device", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text("System actions open Android's own controls when required.", color = Muted, fontSize = 10.sp, lineHeight = 14.sp, modifier = Modifier.padding(top = 3.dp))
                         }
                     }
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("CUSTOMIZATION LABS", fontSize = 11.sp, letterSpacing = 1.8.sp, color = Color(0xFF98A6C8), fontWeight = FontWeight.Bold)
-                Spacer(Modifier.weight(1f))
-                Text("7 TOOLS", fontSize = 10.sp, color = Muted)
-            }
-            Spacer(Modifier.height(12.dp))
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2), modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 22.dp)
+            NavigationBar(
+                containerColor = Color(0xFF080D1A),
+                contentColor = Muted,
+                tonalElevation = 0.dp,
+                modifier = Modifier.navigationBarsPadding().height(66.dp)
             ) {
-                items(features) { feature ->
-                    FeatureCard(feature) {
-                        if (feature.action == FeatureAction.WALLPAPER) onLiveWallpaper() else selectedFeature = feature
-                    }
+                val navItems = listOf(
+                    Triple("Home", Icons.Default.Home, "Home"),
+                    Triple("Wallpapers", Icons.Default.Wallpaper, "Wallpapers"),
+                    Triple("Customize", Icons.Default.Palette, "Customize"),
+                    Triple("Settings", Icons.Default.Tune, "Settings")
+                )
+                navItems.forEach { (label, icon, route) ->
+                    NavigationBarItem(
+                        selected = activeTab == route,
+                        onClick = {
+                            activeTab = route
+                            when (route) {
+                                "Wallpapers" -> onLiveWallpaper()
+                                "Customize" -> selectedFeature = features.first()
+                                "Settings" -> selectedFeature = features.last()
+                            }
+                        },
+                        icon = { Icon(icon, contentDescription = label, modifier = Modifier.size(19.dp)) },
+                        label = { Text(label, fontSize = 9.sp) },
+                        alwaysShowLabel = true,
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Cyan,
+                            selectedTextColor = Cyan,
+                            indicatorColor = Color(0xFF102843),
+                            unselectedIconColor = Muted,
+                            unselectedTextColor = Muted
+                        )
+                    )
                 }
             }
         }
@@ -314,9 +426,37 @@ private fun KebTeeHome(
 
     selectedFeature?.let { feature ->
         FeatureDialog(
-            feature, accent, reduceMotion, audioManager, onReduceMotionChange, onAccentChange, onOpenSystemSettings, onTestNotification,
-            { selectedFeature = null }
+            feature, accent, reduceMotion, audioManager, onReduceMotionChange, onAccentChange,
+            onOpenSystemSettings, onTestNotification, { selectedFeature = null }
         )
+    }
+}
+
+@Composable
+private fun MinimalFeatureCard(feature: Feature, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Surface(
+        modifier = modifier.height(104.dp).clickable(onClick = onClick),
+        shape = RoundedCornerShape(19.dp),
+        color = Color(0xFF10182A),
+        border = BorderStroke(1.dp, Color(0xFF25334F))
+    ) {
+        Row(
+            Modifier.fillMaxSize().padding(horizontal = 13.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                Modifier.size(39.dp).background(feature.accent.copy(alpha = 0.13f), RoundedCornerShape(13.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(feature.icon, contentDescription = null, tint = feature.accent, modifier = Modifier.size(21.dp))
+            }
+            Spacer(Modifier.width(11.dp))
+            Column(Modifier.weight(1f)) {
+                Text(feature.title, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, lineHeight = 15.sp)
+                Spacer(Modifier.height(4.dp))
+                Text(feature.subtitle, color = Muted, fontSize = 10.sp, lineHeight = 13.sp)
+            }
+        }
     }
 }
 
