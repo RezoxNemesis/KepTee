@@ -449,6 +449,8 @@ private fun MinimalFeatureCard(feature: Feature, modifier: Modifier = Modifier, 
 
 @Composable
 private fun SilhouettePreview(reduceMotion: Boolean) {
+    val context = LocalContext.current
+    val wallpaperArtwork = remember(context) { loadKebTeeSilhouette(context).asImageBitmap() }
     val transition = rememberInfiniteTransition(label = "silhouette-preview")
     val animatedScale by transition.animateFloat(
         initialValue = 1f,
