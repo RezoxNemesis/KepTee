@@ -61,8 +61,13 @@ jobs:
           api-level: 35
           target: google_apis
           arch: x86_64
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          emulator-boot-timeout: 900
           disable-animations: true
-          script: bash .github/scripts/startup-smoke.sh
+          script: |
+            adb wait-for-device
+            adb shell getprop sys.boot_completed
+            bash .github/scripts/startup-smoke.sh
       - name: Upload emulator diagnostics
         if: always()
         uses: actions/upload-artifact@v4
