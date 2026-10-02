@@ -7,6 +7,7 @@ on:
       - "app/**"
       - ".maestro/**"
       - ".github/workflows/maestro-android.yml"
+      - ".github/scripts/run-maestro-ui.sh"
       - "*.gradle.kts"
       - "settings.gradle.kts"
       - "gradle/**"
@@ -15,6 +16,7 @@ on:
       - "app/**"
       - ".maestro/**"
       - ".github/workflows/maestro-android.yml"
+      - ".github/scripts/run-maestro-ui.sh"
       - "*.gradle.kts"
       - "settings.gradle.kts"
       - "gradle/**"
@@ -69,21 +71,7 @@ jobs:
           profile: pixel_6
           emulator-options: -no-window -no-audio -no-boot-anim -camera-back none -camera-front none
           disable-animations: true
-          script: |
-            set -uo pipefail
-            mkdir -p test-results
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
-            adb shell pm grant com.rezoxnemesis.kebtee android.permission.POST_NOTIFICATIONS || true
-            curl -Ls "https://get.maestro.mobile.dev" | bash
-            export PATH="$HOME/.maestro/bin:$PATH"
-            maestro --version
-            set +e
-            maestro test --format junit --output test-results/maestro-junit.xml .maestro/flows/core-ui.yaml 2>&1 | tee test-results/maestro.log
-            test_status=${PIPESTATUS[0]}
-            adb logcat -d -v threadtime > test-results/logcat.txt
-            adb shell dumpsys activity activities > test-results/activities.txt
-            find "$HOME/.maestro" -type f \( -name "*.png" -o -name "*.jpg" \) -exec cp -n {} test-results/ \; 2>/dev/null || true
-            exit "$test_status"
+          script: bash .github/scripts/run-maestro-ui.sh
 
       - name: Upload UI test evidence and crash diagnostics
         uses: actions/upload-artifact@v4
