@@ -26,6 +26,9 @@ else
     for component in MainActivity HomeLauncherActivity; do
       package="com.rezoxnemesis.kebtee"
       echo "Launching $component" | tee -a app/build/diagnostics/startup-smoke.txt
+      # Keep each launch's crash check isolated so an earlier activity's crash
+      # cannot incorrectly fail the next activity's smoke test.
+      adb logcat -c
       adb shell am force-stop "$package"
       adb shell am start -W -n "$package/.$component" > "app/build/diagnostics/launch-$component.txt" 2>&1
       launch_status=$?
