@@ -147,16 +147,21 @@ class MainActivity : ComponentActivity() {
                         SettingsPanel {
                             Text("Performance", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                             Text("Wallpaper frame rate", fontWeight = FontWeight.Medium)
-                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                                 listOf(15, 30, 60, 120).forEach { fps ->
                                     val selected = wallpaper.fps == fps
                                     FilterChip(
                                         selected = selected,
                                         onClick = { update(wallpaper.copy(fps = fps)) },
-                                        label = { Text("$fps FPS") },
-                                        modifier = Modifier.semantics {
-                                            contentDescription = "$fps FPS " + if (selected) "selected" else "not selected"
-                                        }
+                                        label = { Text("$fps FPS", fontSize = 12.sp, maxLines = 1) },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .semantics {
+                                                contentDescription = "$fps FPS " + if (selected) "selected" else "not selected"
+                                            }
                                     )
                                 }
                             }
