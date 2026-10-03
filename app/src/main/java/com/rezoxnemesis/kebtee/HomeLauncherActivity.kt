@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,6 +38,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 
 private data class HomeApp(val label: String, val packageName: String, val className: String, val icon: Bitmap) {
     val key: String get() = "$packageName/$className"
@@ -74,6 +76,19 @@ class HomeLauncherActivity : ComponentActivity() {
             val cyan = launcherAccent
             var search by remember { mutableStateOf("") }
             var showAllApps by remember { mutableStateOf(false) }
+            var showLayoutSettings by remember { mutableStateOf(false) }
+            var gridColumns by remember {
+                mutableIntStateOf(launcherPreferences.getInt("grid_columns", 4).coerceIn(3, 6))
+            }
+            var iconSizeDp by remember {
+                mutableIntStateOf(launcherPreferences.getInt("icon_size_dp", 60).coerceIn(48, 80))
+            }
+            var showLabels by remember {
+                mutableStateOf(launcherPreferences.getBoolean("show_labels", true))
+            }
+            var layoutLocked by remember {
+                mutableStateOf(launcherPreferences.getBoolean("layout_locked", false))
+            }
             val filtered = remember(search, apps) {
                 if (search.isBlank()) apps else apps.filter { it.label.contains(search.trim(), ignoreCase = true) }
             }
@@ -95,6 +110,9 @@ class HomeLauncherActivity : ComponentActivity() {
                             Text("${apps.size} APPS", color = Color(0xFFB9C7E5), fontSize = 10.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp))
                         }
                         Spacer(Modifier.width(6.dp))
+                        IconButton(onClick = { showLayoutSettings = true }) {
+                            Icon(Icons.Default.Tune, contentDescription = "Edit Home layout", tint = cyan)
+                        }
                         IconButton(onClick = { startActivity(Intent(this@HomeLauncherActivity, MainActivity::class.java)) }) {
                             Icon(Icons.Default.Settings, contentDescription = "Open KepTee customization dashboard", tint = cyan)
                         }
@@ -122,13 +140,16 @@ class HomeLauncherActivity : ComponentActivity() {
                             }
                         } else {
                             LazyVerticalGrid(
-                                columns = GridCells.Fixed(4), modifier = Modifier.weight(1f),
+                                columns = GridCells.Fixed(gridColumns), modifier = Modifier.weight(1f),
                                 contentPadding = PaddingValues(bottom = 18.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(18.dp)
                             ) {
                                 items(filtered, key = { it.key }) { app ->
                                     AppTile(
                                         app = app, pinned = app.key in activeFavoriteKeys, cyan = cyan,
+                                        iconSizeDp = iconSizeDp,
+                                        showLabel = showLabels,
+                                        canEdit = !layoutLocked,
                                         onOpen = { launchApp(app) },
                                         onTogglePin = {
                                             val updated = if (app.key in activeFavoriteKeys) activeFavoriteKeys - app.key else activeFavoriteKeys + app.key
@@ -156,13 +177,16 @@ class HomeLauncherActivity : ComponentActivity() {
                             }
                         } else {
                             LazyVerticalGrid(
-                                columns = GridCells.Fixed(4), modifier = Modifier.weight(1f),
+                                columns = GridCells.Fixed(gridColumns), modifier = Modifier.weight(1f),
                                 contentPadding = PaddingValues(bottom = 18.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(18.dp)
                             ) {
                                 items(favorites, key = { it.key }) { app ->
                                     AppTile(
                                         app = app, pinned = true, cyan = cyan,
+                                        iconSizeDp = iconSizeDp,
+                                        showLabel = showLabels,
+                                        canEdit = !layoutLocked,
                                         onOpen = { launchApp(app) },
                                         onTogglePin = {
                                             val updated = activeFavoriteKeys - app.key
@@ -180,9 +204,38 @@ class HomeLauncherActivity : ComponentActivity() {
                             colors = ButtonDefaults.buttonColors(containerColor = cyan, contentColor = Color(0xFF07111E))
                         ) { Text("All apps  ·  ${apps.size}", fontWeight = FontWeight.Bold) }
                         Spacer(Modifier.height(8.dp))
-                        Text("Your pins stay saved on this device.", color = Color(0xFF7786A8), fontSize = 11.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                        Text(
+                            if (layoutLocked) "Home layout is locked. Open layout controls to edit." else "Your pins stay saved on this device.",
+                            color = Color(0xFF7786A8), fontSize = 11.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
+            }
+
+            if (showLayoutSettings) {
+                HomeLayoutDialog(
+                    gridColumns = gridColumns,
+                    iconSizeDp = iconSizeDp,
+                    showLabels = showLabels,
+                    layoutLocked = layoutLocked,
+                    onGridColumnsChange = { value ->
+                        gridColumns = value
+                        launcherPreferences.edit().putInt("grid_columns", value).apply()
+                    },
+                    onIconSizeChange = { value ->
+                        iconSizeDp = value
+                        launcherPreferences.edit().putInt("icon_size_dp", value).apply()
+                    },
+                    onShowLabelsChange = { value ->
+                        showLabels = value
+                        launcherPreferences.edit().putBoolean("show_labels", value).apply()
+                    },
+                    onLayoutLockedChange = { value ->
+                        layoutLocked = value
+                        launcherPreferences.edit().putBoolean("layout_locked", value).apply()
+                    },
+                    onDismiss = { showLayoutSettings = false }
+                )
             }
         }
     }
@@ -209,26 +262,90 @@ class HomeLauncherActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun AppTile(app: HomeApp, pinned: Boolean, cyan: Color, onOpen: () -> Unit, onTogglePin: () -> Unit) {
+    private fun AppTile(
+        app: HomeApp,
+        pinned: Boolean,
+        cyan: Color,
+        iconSizeDp: Int,
+        showLabel: Boolean,
+        canEdit: Boolean,
+        onOpen: () -> Unit,
+        onTogglePin: () -> Unit
+    ) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Box {
                 Surface(
                     color = Color(0xFF17213A), shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.size(60.dp).clickable(onClick = onOpen)
+                    modifier = Modifier.size(iconSizeDp.dp).clickable(onClick = onOpen)
                 ) {
                     Image(bitmap = app.icon.asImageBitmap(), contentDescription = app.label, modifier = Modifier.padding(8.dp))
                 }
-                Surface(
-                    color = if (pinned) cyan else Color(0xFF283451),
-                    shape = CircleShape,
-                    modifier = Modifier.align(Alignment.TopEnd).size(19.dp).clickable(onClick = onTogglePin)
-                ) {
-                    Text(if (pinned) "★" else "+", color = Color(0xFF07111E), fontSize = 11.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 1.dp))
+                if (canEdit) {
+                    Surface(
+                        color = if (pinned) cyan else Color(0xFF283451),
+                        shape = CircleShape,
+                        modifier = Modifier.align(Alignment.TopEnd).size(19.dp).clickable(onClick = onTogglePin)
+                    ) {
+                        Text(if (pinned) "★" else "+", color = Color(0xFF07111E), fontSize = 11.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 1.dp))
+                    }
                 }
             }
-            Spacer(Modifier.height(7.dp))
-            Text(app.label, color = Color(0xFFE8EDFA), fontSize = 10.sp, lineHeight = 13.sp, maxLines = 2, textAlign = TextAlign.Center)
+            if (showLabel) {
+                Spacer(Modifier.height(7.dp))
+                Text(app.label, color = Color(0xFFE8EDFA), fontSize = 10.sp, lineHeight = 13.sp, maxLines = 2, textAlign = TextAlign.Center)
+            }
         }
+    }
+
+    @Composable
+    private fun HomeLayoutDialog(
+        gridColumns: Int,
+        iconSizeDp: Int,
+        showLabels: Boolean,
+        layoutLocked: Boolean,
+        onGridColumnsChange: (Int) -> Unit,
+        onIconSizeChange: (Int) -> Unit,
+        onShowLabelsChange: (Boolean) -> Unit,
+        onLayoutLockedChange: (Boolean) -> Unit,
+        onDismiss: () -> Unit
+    ) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = Color(0xE611182B),
+            titleContentColor = Color.White,
+            textContentColor = Color(0xFFC7D0E5),
+            title = { Text("Home layout", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Text("Grid · ${gridColumns} columns", color = Color.White)
+                    Slider(
+                        value = gridColumns.toFloat(),
+                        onValueChange = { onGridColumnsChange(it.roundToInt().coerceIn(3, 6)) },
+                        valueRange = 3f..6f,
+                        steps = 2
+                    )
+                    Text("Icon size · ${iconSizeDp}dp", color = Color.White)
+                    Slider(
+                        value = iconSizeDp.toFloat(),
+                        onValueChange = { onIconSizeChange((it / 4f).roundToInt().times(4).coerceIn(48, 80)) },
+                        valueRange = 48f..80f,
+                        steps = 7
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Show app labels", Modifier.weight(1f), color = Color.White)
+                        Switch(checked = showLabels, onCheckedChange = onShowLabelsChange)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Lock Home layout", color = Color.White)
+                            Text("Prevents pin/unpin edits while locked.", color = Color(0xFF9EABC9), fontSize = 11.sp)
+                        }
+                        Switch(checked = layoutLocked, onCheckedChange = onLayoutLockedChange)
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } }
+        )
     }
 
     @Suppress("DEPRECATION")
