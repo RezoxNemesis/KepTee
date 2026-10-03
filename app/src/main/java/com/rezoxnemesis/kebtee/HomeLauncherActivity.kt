@@ -85,7 +85,14 @@ class HomeLauncherActivity : ComponentActivity() {
             addDataScheme("package")
         }, ContextCompat.RECEIVER_EXPORTED)
         setContent {
-            MaterialTheme(colorScheme = darkColorScheme(primary = Silver, background = Color.Black, surface = Glass)) {
+            MaterialTheme(colorScheme = darkColorScheme(
+                primary = Silver, onPrimary = Color.Black,
+                secondary = Silver, onSecondary = Color.Black,
+                background = Color.Black, onBackground = Silver,
+                surface = Glass, onSurface = Silver,
+                surfaceVariant = Color(0xFF1A1C1F), onSurfaceVariant = Silver.copy(alpha = .72f),
+                outline = Silver.copy(alpha = .24f)
+            )) {
                 Launcher()
             }
         }
