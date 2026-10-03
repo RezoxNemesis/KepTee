@@ -115,7 +115,7 @@ internal object LauncherBackupCodec {
         val glow = number(value, "glow").toFloat()
         val particles = integer(value, "particleDensity")
         val fps = integer(value, "fps")
-        require(speed in 0.25f..2f && glow in 0f..1f && particles in 0..60 && fps in listOf(15, 30, 60)) { "Invalid wallpaper controls" }
+        require(speed in 0.25f..2f && glow in 0f..1f && particles in 0..60 && fps in listOf(15, 30, 60, 120)) { "Invalid wallpaper controls" }
         return LauncherBackupData(layout, WallpaperSettings(
             speed = speed, glow = glow, particleDensity = particles,
             touchEffects = flag(value, "touchEffects"), batterySaver = flag(value, "batterySaver"), fps = fps,
