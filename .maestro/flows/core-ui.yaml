@@ -2,6 +2,13 @@ appId: com.rezoxnemesis.kebtee
 ---
 - launchApp:
     clearState: true
+# The Google APIs emulator can occasionally surface a transient Pixel Launcher ANR over
+# KepTee during cold boot. Dismiss only that system-owned dialog when it appears.
+- runFlow:
+    when:
+      visible: "Pixel Launcher isn't responding"
+    commands:
+      - tapOn: "Close app"
 - assertVisible: "Make yourself at home"
 - scrollUntilVisible:
     element: "Skip setup"
@@ -30,7 +37,7 @@ appId: com.rezoxnemesis.kebtee
 - tapOn: "15 FPS"
 - assertVisible: "15 FPS selected"
 - scrollUntilVisible:
-    element: "Reduced motion toggle"
+    element: "Dim on lock screen"
 - assertVisible:
     text: "Reduced motion toggle"
     checked: false
@@ -47,7 +54,7 @@ appId: com.rezoxnemesis.kebtee
     element: "15 FPS"
 - assertVisible: "15 FPS selected"
 - scrollUntilVisible:
-    element: "Reduced motion toggle"
+    element: "Dim on lock screen"
 - assertVisible:
     text: "Reduced motion toggle"
     checked: true
@@ -58,8 +65,7 @@ appId: com.rezoxnemesis.kebtee
 - tapOn: "Reset wallpaper settings"
 - tapOn: "Reset"
 - scrollUntilVisible:
-    element: "Reduced motion toggle"
-    direction: UP
+    element: "Dim on lock screen"
 - assertVisible:
     text: "Reduced motion toggle"
     checked: false

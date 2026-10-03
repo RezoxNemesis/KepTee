@@ -220,7 +220,11 @@ class MainActivity : ComponentActivity() {
                                 }
                                 Text("A target rate, not a guarantee. Android power saving and lock-screen dimming reduce animation; hidden wallpaper stops rendering.", color = SettingsMuted, fontSize = 12.sp)
                             }
-                            SettingsToggle("Battery saver", "Limit updates to 10 FPS and turn off particles.", wallpaper.batterySaver) { update(wallpaper.copy(batterySaver = it)) }
+                            SettingsToggle(
+                                "Battery saver",
+                                if (wallpaper.scene.isVideo) "Pause video motion on a real decoded frame while battery saver is enabled." else "Limit updates to 10 FPS and turn off particles.",
+                                wallpaper.batterySaver
+                            ) { update(wallpaper.copy(batterySaver = it)) }
                             SettingsToggle("Reduced motion", "Keep a still scene, refreshed only on changes.", wallpaper.reduceMotion) { update(wallpaper.copy(reduceMotion = it)) }
                             SettingsToggle("Dim on lock screen", "Lower light and motion when the device is locked.", wallpaper.dimOnLock) { update(wallpaper.copy(dimOnLock = it)) }
                         }
