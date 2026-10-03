@@ -89,10 +89,14 @@ class HomeLauncherActivity : ComponentActivity() {
             var layoutLocked by remember {
                 mutableStateOf(launcherPreferences.getBoolean("layout_locked", false))
             }
-            val filtered = remember(search, apps) {
-                if (search.isBlank()) apps else apps.filter { it.label.contains(search.trim(), ignoreCase = true) }
+            var hiddenKeys by remember {
+                mutableStateOf(launcherPreferences.getStringSet("hidden_apps", emptySet())?.toSet() ?: emptySet())
             }
-            val favorites = remember(activeFavoriteKeys, apps) { apps.filter { it.key in activeFavoriteKeys } }
+            val visibleApps = remember(apps, hiddenKeys) { apps.filter { it.key !in hiddenKeys } }
+            val filtered = remember(search, visibleApps) {
+                if (search.isBlank()) visibleApps else visibleApps.filter { it.label.contains(search.trim(), ignoreCase = true) }
+            }
+            val favorites = remember(activeFavoriteKeys, visibleApps) { visibleApps.filter { it.key in activeFavoriteKeys } }
 
             BackHandler(enabled = showAllApps) { showAllApps = false }
             MaterialTheme(colorScheme = darkColorScheme(primary = cyan, secondary = cyan, background = night, surface = panel)) {
@@ -107,7 +111,7 @@ class HomeLauncherActivity : ComponentActivity() {
                             Text(if (showAllApps) "YOUR SPACE. YOUR APPS." else "YOUR SPACE. YOUR FAVOURITES.", color = cyan, fontSize = 10.sp, letterSpacing = 1.4.sp)
                         }
                         Surface(color = Color(0xFF182440), shape = RoundedCornerShape(18.dp)) {
-                            Text("${apps.size} APPS", color = Color(0xFFB9C7E5), fontSize = 10.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp))
+                            Text("${visibleApps.size} APPS", color = Color(0xFFB9C7E5), fontSize = 10.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp))
                         }
                         Spacer(Modifier.width(6.dp))
                         IconButton(onClick = { showLayoutSettings = true }) {
@@ -155,6 +159,11 @@ class HomeLauncherActivity : ComponentActivity() {
                                             val updated = if (app.key in activeFavoriteKeys) activeFavoriteKeys - app.key else activeFavoriteKeys + app.key
                                             favoriteKeys = updated
                                             launcherPreferences.edit().putStringSet("favorites", updated).apply()
+                                        },
+                                        onHide = {
+                                            val updated = hiddenKeys + app.key
+                                            hiddenKeys = updated
+                                            launcherPreferences.edit().putStringSet("hidden_apps", updated).apply()
                                         }
                                     )
                                 }
@@ -202,7 +211,7 @@ class HomeLauncherActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxWidth().height(54.dp),
                             shape = RoundedCornerShape(18.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = cyan, contentColor = Color(0xFF07111E))
-                        ) { Text("All apps  ·  ${apps.size}", fontWeight = FontWeight.Bold) }
+                        ) { Text("All apps  ·  ${visibleApps.size}", fontWeight = FontWeight.Bold) }
                         Spacer(Modifier.height(8.dp))
                         Text(
                             if (layoutLocked) "Home layout is locked. Open layout controls to edit." else "Your pins stay saved on this device.",
@@ -218,6 +227,7 @@ class HomeLauncherActivity : ComponentActivity() {
                     iconSizeDp = iconSizeDp,
                     showLabels = showLabels,
                     layoutLocked = layoutLocked,
+                    hiddenAppCount = hiddenKeys.size,
                     onGridColumnsChange = { value ->
                         gridColumns = value
                         launcherPreferences.edit().putInt("grid_columns", value).apply()
@@ -233,6 +243,10 @@ class HomeLauncherActivity : ComponentActivity() {
                     onLayoutLockedChange = { value ->
                         layoutLocked = value
                         launcherPreferences.edit().putBoolean("layout_locked", value).apply()
+                    },
+                    onRestoreHiddenApps = {
+                        hiddenKeys = emptySet()
+                        launcherPreferences.edit().remove("hidden_apps").apply()
                     },
                     onDismiss = { showLayoutSettings = false }
                 )
@@ -270,7 +284,8 @@ class HomeLauncherActivity : ComponentActivity() {
         showLabel: Boolean,
         canEdit: Boolean,
         onOpen: () -> Unit,
-        onTogglePin: () -> Unit
+        onTogglePin: () -> Unit,
+        onHide: (() -> Unit)? = null
     ) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Box {
@@ -288,6 +303,15 @@ class HomeLauncherActivity : ComponentActivity() {
                     ) {
                         Text(if (pinned) "★" else "+", color = Color(0xFF07111E), fontSize = 11.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 1.dp))
                     }
+                    if (onHide != null) {
+                        Surface(
+                            color = Color(0xCC101827),
+                            shape = CircleShape,
+                            modifier = Modifier.align(Alignment.TopStart).size(19.dp).clickable(onClick = onHide)
+                        ) {
+                            Text("×", color = Color(0xFFDDE5F5), fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                        }
+                    }
                 }
             }
             if (showLabel) {
@@ -303,10 +327,12 @@ class HomeLauncherActivity : ComponentActivity() {
         iconSizeDp: Int,
         showLabels: Boolean,
         layoutLocked: Boolean,
+        hiddenAppCount: Int,
         onGridColumnsChange: (Int) -> Unit,
         onIconSizeChange: (Int) -> Unit,
         onShowLabelsChange: (Boolean) -> Unit,
         onLayoutLockedChange: (Boolean) -> Unit,
+        onRestoreHiddenApps: () -> Unit,
         onDismiss: () -> Unit
     ) {
         AlertDialog(
@@ -338,9 +364,14 @@ class HomeLauncherActivity : ComponentActivity() {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text("Lock Home layout", color = Color.White)
-                            Text("Prevents pin/unpin edits while locked.", color = Color(0xFF9EABC9), fontSize = 11.sp)
+                            Text("Prevents pin/unpin/hide edits while locked.", color = Color(0xFF9EABC9), fontSize = 11.sp)
                         }
                         Switch(checked = layoutLocked, onCheckedChange = onLayoutLockedChange)
+                    }
+                    if (hiddenAppCount > 0) {
+                        OutlinedButton(onClick = onRestoreHiddenApps, modifier = Modifier.fillMaxWidth()) {
+                            Text("Restore hidden apps · $hiddenAppCount")
+                        }
                     }
                 }
             },
