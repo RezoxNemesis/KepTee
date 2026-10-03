@@ -34,6 +34,15 @@ class WallpaperSettingsTest {
         assertEquals(42, WallpaperSettings(particleDensity = 42).activeParticleCount(false, false))
     }
 
+    @Test fun displayRefreshRateCapsRequestedWallpaperFps() {
+        val settings = WallpaperSettings(fps = 120)
+        assertEquals(16L, settings.frameIntervalMillis(false, false, 60f))
+        assertEquals(11L, settings.frameIntervalMillis(false, false, 90f))
+        assertEquals(8L, settings.frameIntervalMillis(false, false, 120f))
+        assertEquals(33L, WallpaperSettings(fps = 30).frameIntervalMillis(false, false, 120f))
+        assertEquals(8L, settings.frameIntervalMillis(false, false, Float.NaN))
+    }
+
     @Test fun renderBudgetIsSafeBeforePersistenceNormalization() {
         assertEquals(66L, WallpaperSettings(fps = Int.MIN_VALUE).frameIntervalMillis(false, false))
         assertEquals(33L, WallpaperSettings(fps = 16).frameIntervalMillis(false, false))
