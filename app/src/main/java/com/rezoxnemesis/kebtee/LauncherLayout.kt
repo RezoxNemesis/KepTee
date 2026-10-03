@@ -104,9 +104,11 @@ object LauncherLayoutStore {
         fun keys(key: String) = (values[key] as? Set<*>)?.filterIsInstance<String>()
             .orEmpty().filter(LauncherLayout::validAppKey)
         val favorites = keys("favorites").sorted()
+        val migratedDock = favorites.take(5)
+        val homeFavorites = favorites.filterNot(migratedDock.toSet()::contains)
         return LauncherLayout(
-            pages = favorites.chunked(100).map { page -> page.map { HomeItem(it, listOf(it)) } },
-            dock = favorites.take(5), hidden = keys("hidden_apps").toSet(),
+            pages = homeFavorites.chunked(100).map { page -> page.map { HomeItem(it, listOf(it)) } },
+            dock = migratedDock, hidden = keys("hidden_apps").toSet(),
             columns = values["grid_columns"] as? Int ?: 4,
             iconSize = values["icon_size_dp"] as? Int ?: 56,
             labels = values["show_labels"] as? Boolean ?: true,
