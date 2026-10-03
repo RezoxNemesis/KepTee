@@ -4,6 +4,7 @@ import android.app.WallpaperInfo
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.service.wallpaper.WallpaperService
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -33,6 +34,16 @@ class WallpaperIntegrationTest {
         assertTrue(service.exported)
         val info = WallpaperInfo(context, resolved)
         assertEquals(MainActivity::class.java.name, info.settingsActivity)
+    }
+
+
+    @Test fun bundledSilhouetteArtworkDecodesAtExpectedDimensions() {
+        val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.kebtee_silhouette)
+        assertNotNull("Bundled silhouette artwork failed to decode", bitmap)
+        requireNotNull(bitmap)
+        assertEquals(1031, bitmap.width)
+        assertEquals(1536, bitmap.height)
+        bitmap.recycle()
     }
 
     @Test fun restoredWrongPreferenceTypesFallBackWithoutCrashing() {
