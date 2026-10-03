@@ -44,6 +44,18 @@ class WallpaperIntegrationTest {
         requireNotNull(bitmap)
         assertEquals(1031, bitmap.width)
         assertEquals(1536, bitmap.height)
+        var brightSamples = 0
+        for (y in 0 until bitmap.height step 16) {
+            for (x in 0 until bitmap.width step 16) {
+                val pixel = bitmap.getPixel(x, y)
+                if (android.graphics.Color.red(pixel) > 180 &&
+                    android.graphics.Color.green(pixel) > 180 &&
+                    android.graphics.Color.blue(pixel) > 180) {
+                    brightSamples++
+                }
+            }
+        }
+        assertTrue("Silhouette artwork decoded without visible bright figure detail", brightSamples > 100)
         bitmap.recycle()
     }
 
