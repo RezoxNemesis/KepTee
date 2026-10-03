@@ -444,54 +444,53 @@ private fun SuppliedVideoPreview(
                     modifier = fallbackModifier
                 )
             }
-            return@key
-        }
-
-        AndroidView(
-            modifier = modifier,
-            factory = { viewContext ->
-                VideoView(viewContext).apply {
-                    setBackgroundColor(android.graphics.Color.BLACK)
-                    contentDescription = "${scene.title} animated preview"
-                    setOnErrorListener { _, _, _ ->
-                        playbackFailed = true
-                        true
+        } else {
+            AndroidView(
+                modifier = modifier,
+                factory = { viewContext ->
+                    VideoView(viewContext).apply {
+                        setBackgroundColor(android.graphics.Color.BLACK)
+                        contentDescription = "${scene.title} animated preview"
+                        setOnErrorListener { _, _, _ ->
+                            playbackFailed = true
+                            true
+                        }
+                        setOnPreparedListener { prepared ->
+                            mediaPlayer = prepared
+                            prepared.isLooping = true
+                            prepared.setVolume(0f, 0f)
+                            prepared.setVideoScalingMode(android.media.MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT)
+                            try {
+                                prepared.playbackParams = prepared.playbackParams.setSpeed(playbackSpeed)
+                            } catch (_: IllegalStateException) {
+                            } catch (_: IllegalArgumentException) {
+                            }
+                            start()
+                        }
+                        setVideoPath(file.absolutePath)
+                        videoView = this
                     }
-                    setOnPreparedListener { prepared ->
-                        mediaPlayer = prepared
-                        prepared.isLooping = true
-                        prepared.setVolume(0f, 0f)
-                        prepared.setVideoScalingMode(android.media.MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT)
+                },
+                update = { view ->
+                    videoView = view
+                    view.contentDescription = "${scene.title} animated preview"
+                    mediaPlayer?.let { player ->
                         try {
-                            prepared.playbackParams = prepared.playbackParams.setSpeed(playbackSpeed)
+                            player.playbackParams = player.playbackParams.setSpeed(playbackSpeed)
                         } catch (_: IllegalStateException) {
                         } catch (_: IllegalArgumentException) {
                         }
-                        start()
+                        if (!view.isPlaying) view.start()
                     }
-                    setVideoPath(file.absolutePath)
-                    videoView = this
                 }
-            },
-            update = { view ->
-                videoView = view
-                view.contentDescription = "${scene.title} animated preview"
-                mediaPlayer?.let { player ->
-                    try {
-                        player.playbackParams = player.playbackParams.setSpeed(playbackSpeed)
-                    } catch (_: IllegalStateException) {
-                    } catch (_: IllegalArgumentException) {
-                    }
-                    if (!view.isPlaying) view.start()
-                }
-            }
-        )
+            )
 
-        DisposableEffect(file.absolutePath) {
-            onDispose {
-                mediaPlayer = null
-                try { videoView?.stopPlayback() } catch (_: IllegalStateException) { }
-                videoView = null
+            DisposableEffect(file.absolutePath) {
+                onDispose {
+                    mediaPlayer = null
+                    try { videoView?.stopPlayback() } catch (_: IllegalStateException) { }
+                    videoView = null
+                }
             }
         }
     }
