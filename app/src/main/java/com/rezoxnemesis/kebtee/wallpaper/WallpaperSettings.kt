@@ -20,7 +20,7 @@ data class WallpaperSettings(
         fps = boundedFps()
     )
 
-    private fun boundedFps(): Int = when { fps <= 15 -> 15; fps <= 30 -> 30; else -> 60 }
+    private fun boundedFps(): Int = when { fps <= 15 -> 15; fps <= 30 -> 30; fps <= 60 -> 60; else -> 120 }
 
     /** Zero means draw only in response to a state change, with no animation loop. */
     fun frameIntervalMillis(systemPowerSaver: Boolean, locked: Boolean): Long = when {
