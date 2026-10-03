@@ -155,7 +155,8 @@ class HomeLauncherActivity : ComponentActivity() {
                             } catch (_: PackageManager.NameNotFoundException) { null }
                         }.distinctBy { it.key }.sortedBy { it.label.lowercase(Locale.getDefault()) }
                 }
-                apps = result; loadError = null
+                apps = result
+                loadError = null
                 if (!preferences.contains(LauncherLayoutStore.KEY)) {
                     val migrated = LauncherLayoutStore.read(preferences)
                     if (preferences.all.keys.any { it in setOf("favorites", "hidden_apps", "grid_columns", "icon_size_dp", "show_labels", "layout_locked") }) save(migrated) else {
@@ -163,6 +164,9 @@ class HomeLauncherActivity : ComponentActivity() {
                         save(LauncherLayout(dock = defaults.map { it.key }))
                     }
                 }
+                val availableKeys = result.asSequence().map { it.key }.toSet()
+                val repaired = layout.pruneUnavailable(availableKeys)
+                if (repaired != layout) save(repaired)
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: RuntimeException) { loadError = "Apps could not be loaded. Tap Retry." }
             finally { if (isActive) loading = false }
