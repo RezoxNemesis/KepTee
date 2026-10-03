@@ -394,20 +394,38 @@ private fun SuppliedVideoPreview(
 ) {
     val context = LocalContext.current
     var mediaFile by remember(scene) { mutableStateOf<java.io.File?>(null) }
+    var mediaResolved by remember(scene) { mutableStateOf(false) }
     LaunchedEffect(scene) {
         mediaFile = withContext(Dispatchers.IO) {
-            WallpaperAssetStore.materialize(context.applicationContext, scene)
+            runCatching {
+                WallpaperAssetStore.materialize(context.applicationContext, scene)
+            }.getOrNull()
         }
+        mediaResolved = true
     }
 
     val fallbackModifier = modifier
     val file = mediaFile
     if (file == null) {
-        Box(
-            modifier = modifier.semantics { contentDescription = "${scene.title} animated preview loading" },
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
+        if (!mediaResolved) {
+            Box(
+                modifier = modifier.semantics { contentDescription = "${scene.title} animated preview loading" },
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
+            }
+        } else {
+            when (scene.fallbackStill) {
+                WallpaperScene.ASCENSION_STILL -> RasterSuppliedStillImage(
+                    contentDescription = "${scene.title} wallpaper preview fallback",
+                    modifier = fallbackModifier
+                )
+                else -> RasterResourceImage(
+                    resId = R.drawable.kebtee_silhouette,
+                    contentDescription = "${scene.title} wallpaper preview fallback",
+                    modifier = fallbackModifier
+                )
+            }
         }
         return
     }
