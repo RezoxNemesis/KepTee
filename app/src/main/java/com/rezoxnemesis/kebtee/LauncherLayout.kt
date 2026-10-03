@@ -62,7 +62,7 @@ data class LauncherLayout(
                     val apps = item.apps.filter(available::contains).distinct()
                     when {
                         apps.isEmpty() -> null
-                        !item.isFolder && apps.size == 1 -> HomeItem(apps.single(), apps)
+                        apps.size == 1 -> HomeItem(apps.single(), apps)
                         else -> item.copy(apps = apps)
                     }
                 }
