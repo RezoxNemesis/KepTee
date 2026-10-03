@@ -138,7 +138,7 @@ class MainActivity : ComponentActivity() {
                             Text("Performance", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                             Text("Wallpaper frame rate", fontWeight = FontWeight.Medium)
                             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                listOf(15, 30, 60).forEach { fps ->
+                                listOf(15, 30, 60, 120).forEach { fps ->
                                     val selected = wallpaper.fps == fps
                                     FilterChip(
                                         selected = selected,
