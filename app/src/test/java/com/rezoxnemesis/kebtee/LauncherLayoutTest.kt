@@ -14,6 +14,26 @@ class LauncherLayoutTest {
     private val c = "com.example.c/Main"
     private fun app(key: String) = HomeItem(key, listOf(key))
 
+    @Test fun pruningUnavailableAppsCleansPagesDockAndHiddenState() {
+        val layout = LauncherLayout(
+            pages = listOf(
+                listOf(
+                    app(a),
+                    HomeItem("folder:work", listOf(b, c), "Work")
+                )
+            ),
+            dock = listOf(a, c),
+            hidden = setOf(b, c)
+        )
+
+        val repaired = layout.pruneUnavailable(setOf(a, b))
+
+        assertEquals(listOf(listOf(app(b))), repaired.pages)
+        assertEquals(listOf(a), repaired.dock)
+        assertEquals(setOf(b), repaired.hidden)
+        assertFalse(repaired.pages.flatten().flatMap { it.apps }.contains(c))
+    }
+
     @Test fun normalizingUntrustedSettingsBoundsListsAndUsesSupportedChoices() {
         val layout = LauncherLayout(pages = emptyList(), dock = listOf(a, a, "invalid", b),
             hidden = setOf(a, "invalid"), columns = 99, iconSize = -1,
@@ -47,6 +67,20 @@ class LauncherLayoutTest {
         assertEquals(listOf(c), moved.dock)
         assertEquals(1, moved.pages.flatten().flatMap { it.apps }.count { it == a })
         assertEquals(listOf(a, c), layout.dock)
+    }
+
+    @Test fun normalizationRemovesDockMembersFromHomePlacement() {
+        val layout = LauncherLayout(
+            pages = listOf(listOf(app(a), HomeItem("folder:work", listOf(b, a), "Work"))),
+            dock = listOf(a)
+        ).normalized()
+
+        assertEquals(listOf(a), layout.dock)
+        assertEquals(
+            listOf(listOf(HomeItem("folder:work", listOf(b), "Work"))),
+            layout.pages
+        )
+        assertFalse(layout.pages.flatten().flatMap { it.apps }.contains(a))
     }
 
     @Test fun removalDissolvesSingletonFolderAndRemovesEmptyItems() {

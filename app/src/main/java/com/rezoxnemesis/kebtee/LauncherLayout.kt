@@ -23,12 +23,14 @@ data class LauncherLayout(
     val doubleTap: String = "Search"
 ) {
     fun normalized(): LauncherLayout {
+        val normalizedDock = dock.filter(::validAppKey).distinct().take(5)
+        val dockMembers = normalizedDock.toSet()
         val seen = mutableSetOf<String>()
         val itemIds = mutableSetOf<String>()
         val cleanPages = pages.take(12).map { page ->
             page.take(100).mapNotNull { item ->
                 // Do not mark overflow members as seen: they may have a valid slot later.
-                val members = item.apps.asSequence().filter { validAppKey(it) && it !in seen }
+                val members = item.apps.asSequence().filter { validAppKey(it) && it !in seen && it !in dockMembers }
                     .distinct().take(100).toList()
                 if (members.isEmpty()) null else {
                     seen.addAll(members)
@@ -45,11 +47,29 @@ data class LauncherLayout(
                 }
             }
         }.ifEmpty { listOf(emptyList()) }
-        return copy(pages = cleanPages, dock = dock.filter(::validAppKey).distinct().take(5),
+        return copy(pages = cleanPages, dock = normalizedDock,
             hidden = hidden.filter(::validAppKey).take(2000).toSet(), columns = columns.coerceIn(3, 6),
             iconSize = iconSize.coerceIn(40, 72), drawerStyle = drawerStyle.takeIf { it in listOf("Grid", "List") } ?: "Grid",
             folderStyle = folderStyle.takeIf { it in listOf("Glass", "Radial") } ?: "Glass",
             swipeDown = swipeDown.takeIf { it in ACTIONS } ?: "Search", doubleTap = doubleTap.takeIf { it in ACTIONS } ?: "Search")
+    }
+
+    fun pruneUnavailable(availableKeys: Set<String>): LauncherLayout {
+        val available = availableKeys.filter(::validAppKey).toSet()
+        return copy(
+            pages = pages.map { page ->
+                page.mapNotNull { item ->
+                    val apps = item.apps.filter(available::contains).distinct()
+                    when {
+                        apps.isEmpty() -> null
+                        apps.size == 1 -> HomeItem(apps.single(), apps)
+                        else -> item.copy(apps = apps)
+                    }
+                }
+            },
+            dock = dock.filter(available::contains),
+            hidden = hidden.filter(available::contains).toSet()
+        ).normalized()
     }
 
     fun remove(key: String): LauncherLayout = copy(pages = pages.map { page -> page.mapNotNull { item ->
@@ -104,9 +124,11 @@ object LauncherLayoutStore {
         fun keys(key: String) = (values[key] as? Set<*>)?.filterIsInstance<String>()
             .orEmpty().filter(LauncherLayout::validAppKey)
         val favorites = keys("favorites").sorted()
+        val migratedDock = favorites.take(5)
+        val homeFavorites = favorites.filterNot(migratedDock.toSet()::contains)
         return LauncherLayout(
-            pages = favorites.chunked(100).map { page -> page.map { HomeItem(it, listOf(it)) } },
-            dock = favorites.take(5), hidden = keys("hidden_apps").toSet(),
+            pages = homeFavorites.chunked(100).map { page -> page.map { HomeItem(it, listOf(it)) } },
+            dock = migratedDock, hidden = keys("hidden_apps").toSet(),
             columns = values["grid_columns"] as? Int ?: 4,
             iconSize = values["icon_size_dp"] as? Int ?: 56,
             labels = values["show_labels"] as? Boolean ?: true,

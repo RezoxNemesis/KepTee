@@ -155,13 +155,24 @@ class HomeLauncherActivity : ComponentActivity() {
                             } catch (_: PackageManager.NameNotFoundException) { null }
                         }.distinctBy { it.key }.sortedBy { it.label.lowercase(Locale.getDefault()) }
                 }
-                apps = result; loadError = null
+                apps = result
+                loadError = null
                 if (!preferences.contains(LauncherLayoutStore.KEY)) {
                     val migrated = LauncherLayoutStore.read(preferences)
                     if (preferences.all.keys.any { it in setOf("favorites", "hidden_apps", "grid_columns", "icon_size_dp", "show_labels", "layout_locked") }) save(migrated) else {
                         val defaults = result.filter { app -> listOf("phone", "camera", "messages", "chrome").any { app.label.contains(it, true) } }.take(4).ifEmpty { result.take(4) }
                         save(LauncherLayout(dock = defaults.map { it.key }))
                     }
+                }
+                // An empty query can be transient (for example, during package/profile changes).
+                // Never erase a user's saved layout unless the installed-app index is non-empty.
+                if (result.isNotEmpty()) {
+                    // Read after migration/default initialization; the Compose state captured by this
+                    // coroutine may still hold the pre-migration layout.
+                    val currentLayout = LauncherLayoutStore.read(preferences)
+                    val availableKeys = result.asSequence().map { it.key }.toSet()
+                    val repaired = currentLayout.pruneUnavailable(availableKeys)
+                    if (repaired != currentLayout) save(repaired)
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: RuntimeException) { loadError = "Apps could not be loaded. Tap Retry." }
@@ -360,7 +371,7 @@ class HomeLauncherActivity : ComponentActivity() {
                     }
                     if (!layout.locked) {
                         TextButton(onClick = { save(layout.place(app.key, currentPage)); selected = null; drawer = false }) { Text("Add to this page") }
-                        TextButton(onClick = { save(layout.copy(dock = (layout.dock - app.key + app.key).takeLast(5))); selected = null }) { Text("Add to dock") }
+                        TextButton(onClick = { save(layout.remove(app.key).copy(dock = (layout.dock - app.key + app.key).takeLast(5))); selected = null }) { Text("Add to dock") }
                         TextButton(onClick = { save(layout.remove(app.key)); selected = null }) { Text("Remove from home and dock") }
                         TextButton(onClick = { save(layout.copy(hidden = layout.hidden + app.key)); selected = null }) { Text("Hide app") }
                     } else Text("Layout is locked. Unlock it in Edit home.")

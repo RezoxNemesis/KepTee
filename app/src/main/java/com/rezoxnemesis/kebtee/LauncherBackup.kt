@@ -142,7 +142,12 @@ internal object LauncherBackupCodec {
                 require(value is String && LauncherLayout.validAppKey(value))
             }
         }
-        validateApps(json.getJSONArray("dock"), 5)
+        val dock = json.getJSONArray("dock")
+        validateApps(dock, 5)
+        val dockMembers = mutableSetOf<String>()
+        for (i in 0 until dock.length()) {
+            require(dockMembers.add(dock.getString(i))) { "Duplicate dock app" }
+        }
         validateApps(json.getJSONArray("hidden"), 2000)
         val pages = json.getJSONArray("pages")
         val ids = mutableSetOf<String>()
@@ -169,6 +174,7 @@ internal object LauncherBackupCodec {
                 flag(item, "silver")
             }
         }
+        require(dockMembers.none { it in members }) { "App appears in both dock and home pages" }
     }
 
     private fun number(json: JSONObject, key: String): Double {
