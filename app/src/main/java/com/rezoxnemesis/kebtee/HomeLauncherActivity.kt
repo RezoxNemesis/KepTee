@@ -42,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.lifecycleScope
@@ -60,6 +61,7 @@ class HomeLauncherActivity : ComponentActivity() {
     private var loadError by mutableStateOf<String?>(null)
     private var layout by mutableStateOf(LauncherLayout())
     private var homeRequests by mutableIntStateOf(0)
+    private var notificationAccess by mutableStateOf(false)
     private var loadJob: Job? = null
     private lateinit var widgets: LauncherWidgets
     private lateinit var shortcuts: LauncherShortcuts
@@ -100,7 +102,12 @@ class HomeLauncherActivity : ComponentActivity() {
 
     override fun onStart() { super.onStart(); widgets.startListening() }
     override fun onStop() { widgets.stopListening(); super.onStop() }
-    override fun onResume() { super.onResume(); layout = LauncherLayoutStore.read(preferences); refreshApps() }
+    override fun onResume() {
+        super.onResume()
+        layout = LauncherLayoutStore.read(preferences)
+        notificationAccess = NotificationManagerCompat.getEnabledListenerPackages(this).contains(packageName)
+        refreshApps()
+    }
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); homeRequests++ }
     @Deprecated("Widget provider configuration uses the platform host result API")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -114,6 +121,14 @@ class HomeLauncherActivity : ComponentActivity() {
     private fun save(value: LauncherLayout) { layout = value.normalized(); LauncherLayoutStore.write(preferences, layout) }
     private fun message(value: String) { Toast.makeText(this, value, Toast.LENGTH_LONG).show() }
     private fun settings() { startActivity(Intent(this, MainActivity::class.java)) }
+
+    private fun notificationAccessSettings() {
+        try {
+            startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        } catch (_: ActivityNotFoundException) {
+            message("Notification access settings are unavailable on this device.")
+        }
+    }
 
     private fun refreshApps() {
         loadJob?.cancel()
@@ -347,11 +362,37 @@ class HomeLauncherActivity : ComponentActivity() {
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     private fun AppIcon(app: HomeApp, onOpen: () -> Unit, onActions: () -> Unit, longPress: Boolean = true, dock: Boolean = false) {
+        val badgeCount = NotificationBadgeState.counts[app.key.substringBefore('/')] ?: 0
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Surface(shape = RoundedCornerShape(18.dp), color = Color(0x99191B1E), border = BorderStroke(1.dp, Color.White.copy(alpha = .12f)),
-                modifier = Modifier.size((if (dock) layout.iconSize.coerceAtMost(56) else layout.iconSize).dp)
-                    .combinedClickable(onClick = onOpen, onLongClick = if (longPress) onActions else null)) {
-                Image(app.icon.asImageBitmap(), app.label, Modifier.padding(9.dp))
+            Surface(
+                shape = RoundedCornerShape(18.dp),
+                color = Color(0x99191B1E),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = .12f)),
+                modifier = Modifier
+                    .size((if (dock) layout.iconSize.coerceAtMost(56) else layout.iconSize).dp)
+                    .semantics {
+                        contentDescription = if (badgeCount > 0) "${app.label}, $badgeCount notifications" else app.label
+                    }
+                    .combinedClickable(onClick = onOpen, onLongClick = if (longPress) onActions else null)
+            ) {
+                Box {
+                    Image(app.icon.asImageBitmap(), null, Modifier.padding(9.dp).fillMaxSize())
+                    if (badgeCount > 0) {
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = Silver,
+                            contentColor = Color.Black,
+                            modifier = Modifier.align(Alignment.TopEnd).padding(3.dp).heightIn(min = 18.dp)
+                        ) {
+                            Text(
+                                if (badgeCount >= 99) "99+" else badgeCount.toString(),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
             }
             if (layout.labels && !dock) Text(app.label, fontSize = 11.sp, lineHeight = 14.sp, textAlign = TextAlign.Center, maxLines = 2, modifier = Modifier.padding(top = 6.dp))
         }
@@ -387,6 +428,16 @@ class HomeLauncherActivity : ComponentActivity() {
                 Choice("Folder style", listOf("Glass", "Radial"), layout.folderStyle) { save(layout.copy(folderStyle = it)) }
                 Choice("Swipe down", LauncherLayout.ACTIONS, layout.swipeDown) { save(layout.copy(swipeDown = it)) }
                 Choice("Double tap empty space", LauncherLayout.ACTIONS, layout.doubleTap) { save(layout.copy(doubleTap = it)) }
+                Text("Notification badges", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
+                Text(
+                    if (notificationAccess) "Enabled. KepTee keeps only per-app counts in memory; notification content is not stored."
+                    else "Optional. Android notification access is required to show real per-app badge counts.",
+                    fontSize = 12.sp,
+                    color = Silver.copy(alpha = .72f)
+                )
+                TextButton(onClick = ::notificationAccessSettings) {
+                    Text(if (notificationAccess) "Notification access settings" else "Enable notification badges")
+                }
                 TextButton(onClick = { backup.backup(layout) }) { Text("Export backup") }
                 TextButton(onClick = { backup.restore(); onClose() }) { Text("Restore backup") }
                 Text("Swipe up for apps. Long press empty space to edit. Long press and drag a Home icon onto another to create a folder, or onto the dock or page arrows to move it.", fontSize = 12.sp, color = Silver.copy(alpha = .7f))
