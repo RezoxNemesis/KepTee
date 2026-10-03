@@ -23,12 +23,10 @@ wait_for_android() {
 }
 
 collect_diagnostics() {
-  adb logcat -d -v threadtime > test-results/logcat.txt 2>&1 || true
-  adb shell dumpsys activity activities > test-results/activities.txt 2>&1 || true
+  adb logcat -d -v threadtime > test-results/logcat.txt 2>/dev/null || true
+  adb shell dumpsys activity activities > test-results/activities.txt 2>/dev/null || true
   adb shell getprop > test-results/getprop.txt 2>/dev/null || true
   adb devices -l > test-results/adb-devices.txt 2>&1 || true
-  adb shell screencap -p /sdcard/keptee-ui.png >/dev/null 2>&1 || true
-  adb pull /sdcard/keptee-ui.png test-results/final-screen.png >/dev/null 2>&1 || true
   find "$HOME/.maestro" -type f \( -name "*.png" -o -name "*.jpg" \) -exec cp -n {} test-results/ \; 2>/dev/null || true
 }
 
@@ -44,15 +42,13 @@ run_maestro() {
 }
 
 set -e
-trap collect_diagnostics EXIT
-
 wait_for_android
+
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb shell pm grant com.rezoxnemesis.kebtee android.permission.POST_NOTIFICATIONS || true
-adb logcat -c
 
-export MAESTRO_CLI_NO_ANALYTICS=1
-export MAESTRO_DRIVER_STARTUP_TIMEOUT=120000
+curl -Ls "https://get.maestro.mobile.dev" | bash
+export PATH="$HOME/.maestro/bin:$PATH"
 maestro --version
 
 set +e
@@ -77,4 +73,5 @@ if [[ "$test_status" -ne 0 ]] && grep -Eq   "Maestro Android driver did not star
   set -e
 fi
 
+collect_diagnostics
 exit "$test_status"
