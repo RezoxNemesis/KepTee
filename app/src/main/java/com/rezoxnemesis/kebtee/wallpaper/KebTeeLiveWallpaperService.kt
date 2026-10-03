@@ -65,6 +65,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         private var bitmapScene: WallpaperScene? = null
         private var videoPlayer: MediaPlayer? = null
         private var videoScene: WallpaperScene? = null
+        private var videoPrimed = false
         private var appliedVideoSpeed = Float.NaN
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
         private val effectPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -323,13 +324,14 @@ class KebTeeLiveWallpaperService : WallpaperService() {
                         setSurface(surfaceHolder.surface)
                         isLooping = true
                         setVolume(0f, 0f)
-                        setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT)
                         prepare()
+                        setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT)
                     }
                 } catch (_: Exception) {
                     null
                 }
                 videoScene = if (videoPlayer != null) config.scene else null
+                videoPrimed = false
                 appliedVideoSpeed = Float.NaN
             }
             val player = videoPlayer ?: return
@@ -351,9 +353,21 @@ class KebTeeLiveWallpaperService : WallpaperService() {
             try {
                 if (canAnimate) {
                     if (!player.isPlaying) player.start()
-                } else {
-                    if (player.isPlaying) player.pause()
-                    if (config.reduceMotion && player.currentPosition > 600) player.seekTo(0)
+                    videoPrimed = true
+                } else if (!videoPrimed) {
+                    // Render a real first frame before entering a still power/reduced-motion state.
+                    if (config.reduceMotion) player.seekTo(0)
+                    player.start()
+                    videoPrimed = true
+                    handler.postDelayed({
+                        if (settings.scene == config.scene &&
+                            (settings.reduceMotion || settings.batterySaver || powerSaver ||
+                                (deviceLocked && !isPreview && settings.dimOnLock))) {
+                            pauseVideoPlayer()
+                        }
+                    }, VIDEO_PRIME_MILLIS)
+                } else if (player.isPlaying) {
+                    player.pause()
                 }
             } catch (_: IllegalStateException) {
             }
@@ -369,6 +383,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
             val player = videoPlayer ?: return
             videoPlayer = null
             videoScene = null
+            videoPrimed = false
             appliedVideoSpeed = Float.NaN
             try { player.release() } catch (_: RuntimeException) { }
         }
@@ -444,5 +459,9 @@ class KebTeeLiveWallpaperService : WallpaperService() {
                 canvas?.let { try { surfaceHolder.unlockCanvasAndPost(it) } catch (_: IllegalArgumentException) { } catch (_: IllegalStateException) { } }
             }
         }
+    }
+
+    private companion object {
+        const val VIDEO_PRIME_MILLIS = 90L
     }
 }
