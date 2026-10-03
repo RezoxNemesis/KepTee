@@ -1,5 +1,8 @@
 package com.rezoxnemesis.kebtee
 
+import com.rezoxnemesis.kebtee.wallpaper.WallpaperScene
+import com.rezoxnemesis.kebtee.wallpaper.WallpaperSettings
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -135,7 +138,7 @@ class LauncherLayoutTest {
     @Test fun backupRoundTripPreservesTiltMotionSetting() {
         val data = LauncherBackupData(
             layout = LauncherLayout(pages = listOf(listOf(app(a)))),
-            wallpaper = com.rezoxnemesis.kebtee.wallpaper.WallpaperSettings(tiltMotion = false)
+            wallpaper = WallpaperSettings(tiltMotion = false)
         )
         val decoded = LauncherBackupCodec.decode(LauncherBackupCodec.encode(data))
         assertFalse(decoded.wallpaper.tiltMotion)
@@ -144,11 +147,23 @@ class LauncherLayoutTest {
     @Test fun backupRoundTripPreserves120FpsWallpaperSetting() {
         val data = LauncherBackupData(
             layout = LauncherLayout(pages = listOf(listOf(app(a)))),
-            wallpaper = com.rezoxnemesis.kebtee.wallpaper.WallpaperSettings(fps = 120)
+            wallpaper = WallpaperSettings(fps = 120)
         )
         val decoded = LauncherBackupCodec.decode(LauncherBackupCodec.encode(data))
         assertEquals(120, decoded.wallpaper.fps)
         assertEquals(data.layout.normalized(), decoded.layout)
+    }
+
+    @Test fun backupRoundTripPreservesSelectedWallpaperSceneAndOldBackupsStayCompatible() {
+        val data = LauncherBackupData(
+            layout = LauncherLayout(pages = listOf(listOf(app(a)))),
+            wallpaper = WallpaperSettings(scene = WallpaperScene.AURA_PULSE)
+        )
+        val encoded = LauncherBackupCodec.encode(data)
+        assertEquals(WallpaperScene.AURA_PULSE, LauncherBackupCodec.decode(encoded).wallpaper.scene)
+
+        val legacy = JSONObject(encoded).apply { getJSONObject("wallpaper").remove("scene") }.toString()
+        assertEquals(WallpaperScene.ORIGINAL, LauncherBackupCodec.decode(legacy).wallpaper.scene)
     }
 
 }

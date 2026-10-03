@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
 import com.rezoxnemesis.kebtee.wallpaper.WallpaperPreferences
+import com.rezoxnemesis.kebtee.wallpaper.WallpaperScene
 import com.rezoxnemesis.kebtee.wallpaper.WallpaperSettings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -97,7 +98,7 @@ internal object LauncherBackupCodec {
                 .put("batterySaver", settings.batterySaver).put("fps", settings.fps)
                 .put("timeEffects", settings.timeEffects).put("chargingEffects", settings.chargingEffects)
                 .put("dimOnLock", settings.dimOnLock).put("reduceMotion", settings.reduceMotion)
-                .put("tiltMotion", settings.tiltMotion)).toString()
+                .put("tiltMotion", settings.tiltMotion).put("scene", settings.scene.id)).toString()
         require(raw.toByteArray(Charsets.UTF_8).size <= MAX_BYTES)
         return raw
     }
@@ -122,7 +123,8 @@ internal object LauncherBackupCodec {
             touchEffects = flag(value, "touchEffects"), batterySaver = flag(value, "batterySaver"), fps = fps,
             timeEffects = flag(value, "timeEffects"), chargingEffects = flag(value, "chargingEffects"),
             dimOnLock = flag(value, "dimOnLock"), reduceMotion = flag(value, "reduceMotion"),
-            tiltMotion = optionalFlag(value, "tiltMotion", true)
+            tiltMotion = optionalFlag(value, "tiltMotion", true),
+            scene = WallpaperScene.fromId(optionalString(value, "scene"))
         ))
     }
 
@@ -184,6 +186,13 @@ internal object LauncherBackupCodec {
     private fun optionalFlag(json: JSONObject, key: String, default: Boolean): Boolean {
         if (!json.has(key)) return default
         return flag(json, key)
+    }
+
+    private fun optionalString(json: JSONObject, key: String): String? {
+        if (!json.has(key)) return null
+        val value = json.get(key)
+        require(value is String) { "Expected string setting" }
+        return value
     }
 
     private fun flag(json: JSONObject, key: String): Boolean {

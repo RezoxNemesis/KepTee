@@ -36,18 +36,35 @@ object WallpaperAssetStore {
         )
     )
 
+    /**
+     * Successful checksum validation is remembered for this process. The files live in the
+     * app-private cache, so re-reading and hashing multi-megabyte video files on every wallpaper
+     * offset/settings callback adds I/O without improving integrity.
+     */
+    private val verifiedFiles = mutableMapOf<WallpaperScene, File>()
+
+    @Synchronized
     fun materialize(context: Context, scene: WallpaperScene): File? {
         val spec = specs[scene] ?: return null
+        verifiedFiles[scene]?.let { cached ->
+            if (cached.exists() && cached.length() == spec.size) return cached
+            verifiedFiles.remove(scene)
+        }
+
         val root = File(context.cacheDir, "keptee-wallpaper-media")
         if (!root.exists() && !root.mkdirs()) return null
         val target = File(root, spec.fileName)
-        if (target.length() == spec.size && sha256(target) == spec.sha256) return target
+        if (target.length() == spec.size && sha256(target) == spec.sha256) {
+            verifiedFiles[scene] = target
+            return target
+        }
+
+        val parts = context.assets.list(spec.directory)?.sorted().orEmpty()
+        if (parts.isEmpty()) return null
 
         val temp = File(root, spec.fileName + ".tmp")
         return try {
             FileOutputStream(temp, false).use { output ->
-                val parts = context.assets.list(spec.directory)?.sorted().orEmpty()
-                if (parts.isEmpty()) return null
                 for (part in parts) {
                     val encoded = context.assets.open("${spec.directory}/$part").bufferedReader().use { it.readText() }
                     output.write(Base64.decode(encoded, Base64.NO_WRAP))
@@ -63,6 +80,7 @@ object WallpaperAssetStore {
                     temp.copyTo(target, overwrite = true)
                     temp.delete()
                 }
+                verifiedFiles[scene] = target
                 target
             }
         } catch (_: Exception) {
