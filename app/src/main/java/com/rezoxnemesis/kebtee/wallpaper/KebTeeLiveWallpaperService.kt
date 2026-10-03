@@ -325,7 +325,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
                         isLooping = true
                         setVolume(0f, 0f)
                         prepare()
-                        setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT)
+                        setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
                     }
                 } catch (_: Exception) {
                     null
