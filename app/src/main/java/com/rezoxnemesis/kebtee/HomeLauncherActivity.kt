@@ -353,7 +353,7 @@ class HomeLauncherActivity : ComponentActivity() {
                     }
                     if (!layout.locked) {
                         TextButton(onClick = { save(layout.place(app.key, currentPage)); selected = null; drawer = false }) { Text("Add to this page") }
-                        TextButton(onClick = { save(layout.copy(dock = (layout.dock - app.key + app.key).takeLast(5))); selected = null }) { Text("Add to dock") }
+                        TextButton(onClick = { save(layout.remove(app.key).copy(dock = (layout.dock - app.key + app.key).takeLast(5))); selected = null }) { Text("Add to dock") }
                         TextButton(onClick = { save(layout.remove(app.key)); selected = null }) { Text("Remove from home and dock") }
                         TextButton(onClick = { save(layout.copy(hidden = layout.hidden + app.key)); selected = null }) { Text("Hide app") }
                     } else Text("Layout is locked. Unlock it in Edit home.")
