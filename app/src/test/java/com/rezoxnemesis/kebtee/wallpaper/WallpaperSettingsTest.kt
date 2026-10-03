@@ -34,6 +34,16 @@ class WallpaperSettingsTest {
         assertEquals(42, WallpaperSettings(particleDensity = 42).activeParticleCount(false, false))
     }
 
+    @Test fun tiltMotionRespectsUserAndPowerConstraints() {
+        assertEquals(true, WallpaperSettings().tiltEnabled(false, false))
+        assertEquals(false, WallpaperSettings(tiltMotion = false).tiltEnabled(false, false))
+        assertEquals(false, WallpaperSettings(reduceMotion = true).tiltEnabled(false, false))
+        assertEquals(false, WallpaperSettings(batterySaver = true).tiltEnabled(false, false))
+        assertEquals(false, WallpaperSettings().tiltEnabled(true, false))
+        assertEquals(false, WallpaperSettings().tiltEnabled(false, true))
+        assertEquals(true, WallpaperSettings(dimOnLock = false).tiltEnabled(false, true))
+    }
+
     @Test fun renderBudgetIsSafeBeforePersistenceNormalization() {
         assertEquals(66L, WallpaperSettings(fps = Int.MIN_VALUE).frameIntervalMillis(false, false))
         assertEquals(33L, WallpaperSettings(fps = 16).frameIntervalMillis(false, false))
