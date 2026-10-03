@@ -346,9 +346,27 @@ private fun RasterSuppliedStillImage(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val bitmap = remember { WallpaperAssetStore.decodeStill(context.applicationContext) }
-    DisposableEffect(bitmap) {
-        onDispose { bitmap?.recycle() }
+    var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    LaunchedEffect(Unit) {
+        bitmap = withContext(Dispatchers.IO) {
+            WallpaperAssetStore.decodeStill(context.applicationContext)
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            bitmap?.recycle()
+            bitmap = null
+        }
+    }
+    val ready = bitmap
+    if (ready == null) {
+        Box(
+            modifier = modifier.semantics { this.contentDescription = "$contentDescription loading" },
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
+        }
+        return
     }
     AndroidView(
         modifier = modifier.semantics { this.contentDescription = contentDescription },
@@ -356,12 +374,12 @@ private fun RasterSuppliedStillImage(
             ImageView(viewContext).apply {
                 scaleType = ImageView.ScaleType.FIT_CENTER
                 adjustViewBounds = true
-                setImageBitmap(bitmap)
+                setImageBitmap(ready)
                 this.contentDescription = contentDescription
             }
         },
         update = { view ->
-            if (view.drawable == null && bitmap != null && !bitmap.isRecycled) view.setImageBitmap(bitmap)
+            if (view.drawable == null && !ready.isRecycled) view.setImageBitmap(ready)
             view.contentDescription = contentDescription
         }
     )
@@ -384,7 +402,16 @@ private fun SuppliedVideoPreview(
 
     val fallbackModifier = modifier
     val file = mediaFile
-    if (file == null || !playMotion) {
+    if (file == null) {
+        Box(
+            modifier = modifier.semantics { contentDescription = "${scene.title} animated preview loading" },
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
+        }
+        return
+    }
+    if (!playMotion) {
         when (scene.fallbackStill) {
             WallpaperScene.ASCENSION_STILL -> RasterSuppliedStillImage(
                 contentDescription = "${scene.title} wallpaper preview",
@@ -402,20 +429,39 @@ private fun SuppliedVideoPreview(
     key(file.absolutePath) {
         var videoView by remember { mutableStateOf<VideoView?>(null) }
         var mediaPlayer by remember { mutableStateOf<android.media.MediaPlayer?>(null) }
+        var playbackFailed by remember { mutableStateOf(false) }
         val playbackSpeed = speed.coerceIn(0.25f, 2f)
 
+        if (playbackFailed) {
+            when (scene.fallbackStill) {
+                WallpaperScene.ASCENSION_STILL -> RasterSuppliedStillImage(
+                    contentDescription = "${scene.title} wallpaper preview fallback",
+                    modifier = fallbackModifier
+                )
+                else -> RasterResourceImage(
+                    resId = R.drawable.kebtee_silhouette,
+                    contentDescription = "${scene.title} wallpaper preview fallback",
+                    modifier = fallbackModifier
+                )
+            }
+            return@key
+        }
+
         AndroidView(
-            modifier = modifier.semantics {
-                contentDescription = "${scene.title} animated preview"
-            },
+            modifier = modifier,
             factory = { viewContext ->
                 VideoView(viewContext).apply {
                     setBackgroundColor(android.graphics.Color.BLACK)
+                    contentDescription = "${scene.title} animated preview"
+                    setOnErrorListener { _, _, _ ->
+                        playbackFailed = true
+                        true
+                    }
                     setOnPreparedListener { prepared ->
                         mediaPlayer = prepared
                         prepared.isLooping = true
                         prepared.setVolume(0f, 0f)
-                        prepared.setVideoScalingMode(android.media.MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
+                        prepared.setVideoScalingMode(android.media.MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT)
                         try {
                             prepared.playbackParams = prepared.playbackParams.setSpeed(playbackSpeed)
                         } catch (_: IllegalStateException) {
@@ -429,6 +475,7 @@ private fun SuppliedVideoPreview(
             },
             update = { view ->
                 videoView = view
+                view.contentDescription = "${scene.title} animated preview"
                 mediaPlayer?.let { player ->
                     try {
                         player.playbackParams = player.playbackParams.setSpeed(playbackSpeed)
