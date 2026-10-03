@@ -132,6 +132,15 @@ class LauncherLayoutTest {
         assertEquals(layout, layout.remove(c))
     }
 
+    @Test fun backupRoundTripPreservesTiltMotionSetting() {
+        val data = LauncherBackupData(
+            layout = LauncherLayout(pages = listOf(listOf(app(a)))),
+            wallpaper = com.rezoxnemesis.kebtee.wallpaper.WallpaperSettings(tiltMotion = false)
+        )
+        val decoded = LauncherBackupCodec.decode(LauncherBackupCodec.encode(data))
+        assertFalse(decoded.wallpaper.tiltMotion)
+    }
+
     @Test fun backupRoundTripPreserves120FpsWallpaperSetting() {
         val data = LauncherBackupData(
             layout = LauncherLayout(pages = listOf(listOf(app(a)))),
