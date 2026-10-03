@@ -61,6 +61,8 @@ class HomeLauncherActivity : ComponentActivity() {
     private var loadError by mutableStateOf<String?>(null)
     private var layout by mutableStateOf(LauncherLayout())
     private var homeRequests by mutableIntStateOf(0)
+    // Forces Recent/Most used drawer queries to re-read persisted counters after app launches.
+    private var usageRevision by mutableIntStateOf(0)
     private var notificationAccess by mutableStateOf(false)
     private var loadJob: Job? = null
     private lateinit var widgets: LauncherWidgets
@@ -174,6 +176,7 @@ class HomeLauncherActivity : ComponentActivity() {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED))
             usage.edit().putLong("last:${app.key}", System.currentTimeMillis())
                 .putInt("count:${app.key}", (usage.getInt("count:${app.key}", 0).toLong().coerceAtLeast(0) + 1).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()).apply()
+            usageRevision++
         } catch (_: ActivityNotFoundException) { message("This app is no longer available."); refreshApps() }
         catch (_: SecurityException) { message("Android blocked this app. Check its profile or restrictions.") }
     }
@@ -197,7 +200,7 @@ class HomeLauncherActivity : ComponentActivity() {
         val haptics = LocalHapticFeedback.current
         val available = remember(apps) { apps.associateBy { it.key } }
         val currentPage = page.coerceIn(0, layout.pages.lastIndex)
-        val shown = remember(apps, query, layout.hidden, sort, drawer) {
+        val shown = remember(apps, query, layout.hidden, sort, drawer, usageRevision) {
             val filtered = apps.filter { it.key !in layout.hidden && (query.isBlank() || it.label.contains(query.trim(), true)) }
             when (sort) {
                 "Recent" -> filtered.filter { usage.getLong("last:${it.key}", 0) > 0 }.sortedByDescending { usage.getLong("last:${it.key}", 0) }
