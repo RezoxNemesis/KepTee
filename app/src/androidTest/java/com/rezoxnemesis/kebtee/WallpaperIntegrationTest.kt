@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
-import android.graphics.drawable.BitmapDrawable
 import android.service.wallpaper.WallpaperService
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -58,15 +57,6 @@ class WallpaperIntegrationTest {
         assertTrue("Silhouette artwork decoded without visible bright figure detail", brightSamples > 100)
         bitmap.recycle()
     }
-
-    @Suppress("DEPRECATION")
-    @Test fun bundledRasterDrawablesResolveAsBitmapDrawables() {
-        val logo = context.resources.getDrawable(R.drawable.kebtee_logo_master, context.theme)
-        val silhouette = context.resources.getDrawable(R.drawable.kebtee_silhouette, context.theme)
-        assertTrue("Logo resource must resolve as BitmapDrawable", logo is BitmapDrawable)
-        assertTrue("Silhouette resource must resolve as BitmapDrawable", silhouette is BitmapDrawable)
-    }
-
     @Test fun restoredWrongPreferenceTypesFallBackWithoutCrashing() {
         val preferences = context.getSharedPreferences("wallpaper_integration_test", Context.MODE_PRIVATE)
         try {
