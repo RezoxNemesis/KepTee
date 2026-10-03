@@ -11,9 +11,7 @@ appId: com.rezoxnemesis.kebtee
 - scrollUntilVisible:
     element: "15 FPS"
 - tapOn: "15 FPS"
-- assertVisible:
-    text: "15 FPS"
-    selected: true
+- assertVisible: "15 FPS selected"
 - scrollUntilVisible:
     element: "Reduced motion toggle"
 - assertVisible:
@@ -30,9 +28,7 @@ appId: com.rezoxnemesis.kebtee
 - assertNotVisible: "Make yourself at home"
 - scrollUntilVisible:
     element: "15 FPS"
-- assertVisible:
-    text: "15 FPS"
-    selected: true
+- assertVisible: "15 FPS selected"
 - scrollUntilVisible:
     element: "Reduced motion toggle"
 - assertVisible:
@@ -53,9 +49,7 @@ appId: com.rezoxnemesis.kebtee
 - scrollUntilVisible:
     element: "30 FPS"
     direction: UP
-- assertVisible:
-    text: "30 FPS"
-    selected: true
+- assertVisible: "30 FPS selected"
 - scrollUntilVisible:
     element: "Open launcher"
     direction: UP
