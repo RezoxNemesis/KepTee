@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.graphics.BitmapFactory
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -26,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -220,18 +222,29 @@ private fun RasterResourceImage(
     contentDescription: String,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val bitmap = remember(resId) {
+        BitmapFactory.decodeResource(
+            context.resources,
+            resId,
+            BitmapFactory.Options().apply { inScaled = false }
+        )
+    }
+    DisposableEffect(bitmap) {
+        onDispose { bitmap?.recycle() }
+    }
     AndroidView(
         modifier = modifier.semantics { this.contentDescription = contentDescription },
-        factory = { context ->
-            ImageView(context).apply {
+        factory = { viewContext ->
+            ImageView(viewContext).apply {
                 scaleType = ImageView.ScaleType.FIT_CENTER
                 adjustViewBounds = true
-                setImageResource(resId)
+                setImageBitmap(bitmap)
                 this.contentDescription = contentDescription
             }
         },
         update = { view ->
-            view.setImageResource(resId)
+            if (view.drawable == null && bitmap != null && !bitmap.isRecycled) view.setImageBitmap(bitmap)
             view.contentDescription = contentDescription
         }
     )
