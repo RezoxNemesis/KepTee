@@ -12,6 +12,7 @@ import android.graphics.BitmapFactory
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.core.app.NotificationManagerCompat
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -44,6 +45,7 @@ private val SettingsGlass = Color(0xFF141517)
 class MainActivity : ComponentActivity() {
     private var isDefaultHome by mutableStateOf(false)
     private var wallpaperApplied by mutableStateOf(false)
+    private var notificationAccess by mutableStateOf(false)
     private val homeRoleLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         refreshSystemState()
     }
@@ -93,7 +95,14 @@ class MainActivity : ComponentActivity() {
                             SettingsPanel {
                                 Text("Make yourself at home", fontWeight = FontWeight.Bold, fontSize = 22.sp)
                                 Text("Choose KepTee as your home, then bring the original silhouette to life. You can return to these controls anytime.", color = SettingsMuted)
-                                SetupActions(isDefaultHome, wallpaperApplied, ::requestHomeRole, ::openWallpaperPicker)
+                                SetupActions(
+                                    isDefaultHome,
+                                    wallpaperApplied,
+                                    notificationAccess,
+                                    ::requestHomeRole,
+                                    ::openWallpaperPicker,
+                                    ::openNotificationAccessSettings
+                                )
                                 Text("On your home screen, swipe up to open your apps. Long-press an app to organise it. Open launcher settings to customise your layout and gestures.", color = SettingsMuted, fontSize = 13.sp)
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                                     TextButton(onClick = {
@@ -180,6 +189,7 @@ class MainActivity : ComponentActivity() {
         wallpaperApplied = try {
             WallpaperManager.getInstance(this).wallpaperInfo?.component == ComponentName(this, KebTeeLiveWallpaperService::class.java)
         } catch (_: SecurityException) { false }
+        notificationAccess = NotificationManagerCompat.getEnabledListenerPackages(this).contains(packageName)
     }
 
     private fun requestHomeRole() {
@@ -194,6 +204,13 @@ class MainActivity : ComponentActivity() {
             }
         }
         safeStart(Intent(Settings.ACTION_HOME_SETTINGS))
+    }
+
+    private fun openNotificationAccessSettings() {
+        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+        if (!tryStart(intent)) {
+            Toast.makeText(this, "Notification access settings are unavailable on this device.", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun openWallpaperPicker() {
@@ -258,9 +275,24 @@ private fun SettingsPanel(content: @Composable ColumnScope.() -> Unit) {
 }
 
 @Composable
-private fun SetupActions(isHome: Boolean, isWallpaper: Boolean, onHome: () -> Unit, onWallpaper: () -> Unit) {
+private fun SetupActions(
+    isHome: Boolean,
+    isWallpaper: Boolean,
+    notificationAccess: Boolean,
+    onHome: () -> Unit,
+    onWallpaper: () -> Unit,
+    onNotifications: () -> Unit
+) {
     OutlinedButton(onClick = onHome, modifier = Modifier.fillMaxWidth()) { Text(if (isHome) "Default home is ready" else "Set as default home") }
     OutlinedButton(onClick = onWallpaper, modifier = Modifier.fillMaxWidth()) { Text(if (isWallpaper) "Preview your live wallpaper" else "Set up live wallpaper") }
+    OutlinedButton(onClick = onNotifications, modifier = Modifier.fillMaxWidth()) {
+        Text(if (notificationAccess) "Notification badges enabled" else "Enable notification badges")
+    }
+    Text(
+        "Optional. KepTee uses notification access only for on-device per-app badge counts and does not store notification content.",
+        color = SettingsMuted,
+        fontSize = 12.sp
+    )
 }
 
 @Composable
