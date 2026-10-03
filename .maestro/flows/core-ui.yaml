@@ -18,6 +18,8 @@ appId: com.rezoxnemesis.kebtee
 - scrollUntilVisible:
     element: "Ascension Flow"
 - tapOn: "Ascension Flow"
+- assertVisible: "Ascension Flow animated preview"
+- takeScreenshot: "keptee-wallpaper-video-preview"
 - scrollUntilVisible:
     element: "Video frame cadence"
 - assertVisible: "Video frame cadence"

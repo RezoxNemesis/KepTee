@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.graphics.BitmapFactory
 import android.widget.ImageView
+import android.widget.VideoView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.core.app.NotificationManagerCompat
@@ -40,6 +41,8 @@ import com.rezoxnemesis.kebtee.wallpaper.WallpaperPreferences
 import com.rezoxnemesis.kebtee.wallpaper.WallpaperScene
 import com.rezoxnemesis.kebtee.wallpaper.WallpaperSettings
 import kotlin.math.roundToInt
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 private val SettingsSilver = Color(0xFFE5E6E8)
 private val SettingsMuted = Color(0xFFA8ABB0)
@@ -144,11 +147,17 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                             when (wallpaper.scene) {
-                                WallpaperScene.ASCENSION_STILL, WallpaperScene.ASCENSION_FLOW -> RasterSuppliedStillImage(
+                                WallpaperScene.ASCENSION_STILL -> RasterSuppliedStillImage(
                                     contentDescription = "${wallpaper.scene.title} wallpaper preview",
                                     modifier = Modifier.fillMaxWidth().height(260.dp).background(Color.Black)
                                 )
-                                else -> RasterResourceImage(
+                                WallpaperScene.ASCENSION_FLOW, WallpaperScene.AURA_PULSE -> SuppliedVideoPreview(
+                                    scene = wallpaper.scene,
+                                    speed = wallpaper.speed,
+                                    playMotion = !wallpaper.reduceMotion && !wallpaper.batterySaver,
+                                    modifier = Modifier.fillMaxWidth().height(260.dp).background(Color.Black)
+                                )
+                                WallpaperScene.ORIGINAL -> RasterResourceImage(
                                     resId = R.drawable.kebtee_silhouette,
                                     contentDescription = "${wallpaper.scene.title} wallpaper preview",
                                     modifier = Modifier.fillMaxWidth().height(260.dp).background(Color.Black)
@@ -356,6 +365,88 @@ private fun RasterSuppliedStillImage(
             view.contentDescription = contentDescription
         }
     )
+}
+
+@Composable
+private fun SuppliedVideoPreview(
+    scene: WallpaperScene,
+    speed: Float,
+    playMotion: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val mediaFile by produceState<java.io.File?>(initialValue = null, scene) {
+        value = withContext(Dispatchers.IO) {
+            WallpaperAssetStore.materialize(context.applicationContext, scene)
+        }
+    }
+
+    val fallbackModifier = modifier
+    val file = mediaFile
+    if (file == null || !playMotion) {
+        when (scene.fallbackStill) {
+            WallpaperScene.ASCENSION_STILL -> RasterSuppliedStillImage(
+                contentDescription = "${scene.title} wallpaper preview",
+                modifier = fallbackModifier
+            )
+            else -> RasterResourceImage(
+                resId = R.drawable.kebtee_silhouette,
+                contentDescription = "${scene.title} wallpaper preview",
+                modifier = fallbackModifier
+            )
+        }
+        return
+    }
+
+    key(file.absolutePath) {
+        var videoView by remember { mutableStateOf<VideoView?>(null) }
+        var mediaPlayer by remember { mutableStateOf<android.media.MediaPlayer?>(null) }
+        val playbackSpeed = speed.coerceIn(0.25f, 2f)
+
+        AndroidView(
+            modifier = modifier.semantics {
+                contentDescription = "${scene.title} animated preview"
+            },
+            factory = { viewContext ->
+                VideoView(viewContext).apply {
+                    setBackgroundColor(android.graphics.Color.BLACK)
+                    setOnPreparedListener { prepared ->
+                        mediaPlayer = prepared
+                        prepared.isLooping = true
+                        prepared.setVolume(0f, 0f)
+                        prepared.setVideoScalingMode(android.media.MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
+                        try {
+                            prepared.playbackParams = prepared.playbackParams.setSpeed(playbackSpeed)
+                        } catch (_: IllegalStateException) {
+                        } catch (_: IllegalArgumentException) {
+                        }
+                        start()
+                    }
+                    setVideoPath(file.absolutePath)
+                    videoView = this
+                }
+            },
+            update = { view ->
+                videoView = view
+                mediaPlayer?.let { player ->
+                    try {
+                        player.playbackParams = player.playbackParams.setSpeed(playbackSpeed)
+                    } catch (_: IllegalStateException) {
+                    } catch (_: IllegalArgumentException) {
+                    }
+                    if (!view.isPlaying) view.start()
+                }
+            }
+        )
+
+        DisposableEffect(file.absolutePath) {
+            onDispose {
+                mediaPlayer = null
+                try { videoView?.stopPlayback() } catch (_: IllegalStateException) { }
+                videoView = null
+            }
+        }
+    }
 }
 
 @Composable
