@@ -28,7 +28,7 @@ class LauncherLayoutTest {
 
         val repaired = layout.pruneUnavailable(setOf(a, b))
 
-        assertEquals(listOf(listOf(HomeItem("folder:work", listOf(b), "Work"))), repaired.pages)
+        assertEquals(listOf(listOf(app(b))), repaired.pages)
         assertEquals(listOf(a), repaired.dock)
         assertEquals(setOf(b), repaired.hidden)
         assertFalse(repaired.pages.flatten().flatMap { it.apps }.contains(c))
