@@ -235,7 +235,7 @@ class HomeLauncherActivity : ComponentActivity() {
         }
         // Consume Back on Home so Android does not reveal a previous launcher task.
         BackHandler(enabled = !drawer && !edit && selected == null && folderId == null) { }
-        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = if (drawer) .88f else .18f))) {
+        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = if (drawer) .88f else .28f))) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding().padding(horizontal = 16.dp)) {
                 Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("KepTee", fontSize = 24.sp, fontWeight = FontWeight.Light, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
