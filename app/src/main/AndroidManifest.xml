@@ -17,7 +17,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".HomeLauncherActivity" android:exported="true" android:label="KepTee Home">
+        <activity android:name=".HomeLauncherActivity" android:exported="true" android:label="KepTee Home" android:theme="@style/Theme.KebTee.Home">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.HOME" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>
         </activity>
         <service
