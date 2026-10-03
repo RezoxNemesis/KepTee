@@ -14,6 +14,17 @@ enum class WallpaperScene(
     ASCENSION_FLOW("ascension_flow", "Ascension Flow", true),
     AURA_PULSE("aura_pulse", "Aura Pulse", true);
 
+    /**
+     * A decoder or reconstructed-media failure must never leave a black wallpaper surface.
+     * Video scenes fall back to the closest bundled still while non-video scenes keep themselves.
+     */
+    val fallbackStill: WallpaperScene
+        get() = when (this) {
+            ASCENSION_FLOW -> ASCENSION_STILL
+            AURA_PULSE -> ORIGINAL
+            else -> this
+        }
+
     companion object {
         fun fromId(value: String?): WallpaperScene =
             entries.firstOrNull { it.id == value } ?: ORIGINAL

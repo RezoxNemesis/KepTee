@@ -317,7 +317,11 @@ class KebTeeLiveWallpaperService : WallpaperService() {
             figureBitmap = null
             bitmapScene = null
 
-            val mediaFile = WallpaperAssetStore.materialize(this@KebTeeLiveWallpaperService, config.scene) ?: return
+            val mediaFile = WallpaperAssetStore.materialize(this@KebTeeLiveWallpaperService, config.scene)
+                ?: run {
+                    drawVideoFallback(config)
+                    return
+                }
             if (videoPlayer == null || videoScene != config.scene) {
                 releaseVideoPlayer()
                 videoPlayer = try {
@@ -336,7 +340,10 @@ class KebTeeLiveWallpaperService : WallpaperService() {
                 videoPrimed = false
                 appliedVideoSpeed = Float.NaN
             }
-            val player = videoPlayer ?: return
+            val player = videoPlayer ?: run {
+                drawVideoFallback(config)
+                return
+            }
             val locked = deviceLocked && !isPreview
             val canAnimate = canDraw() && config.videoMotionEnabled(powerSaver, locked)
             val nightFactor = if (config.timeEffects && (hour < 6 || hour >= 21)) 0.92f else 1f
@@ -372,6 +379,14 @@ class KebTeeLiveWallpaperService : WallpaperService() {
                 }
             } catch (_: IllegalStateException) {
             }
+        }
+
+        private fun drawVideoFallback(config: WallpaperSettings) {
+            val fallback = config.copy(
+                scene = config.scene.fallbackStill,
+                reduceMotion = true
+            )
+            drawScene(fallback, deviceLocked && !isPreview, SystemClock.uptimeMillis())
         }
 
         private fun pauseVideoPlayer() {

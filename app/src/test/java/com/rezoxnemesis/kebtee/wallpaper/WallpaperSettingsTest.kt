@@ -73,6 +73,13 @@ class WallpaperSettingsTest {
         assertEquals(true, video.copy(dimOnLock = false).videoMotionEnabled(false, true))
     }
 
+    @Test fun videoScenesHaveSafeStillFallbacks() {
+        assertEquals(WallpaperScene.ORIGINAL, WallpaperScene.ORIGINAL.fallbackStill)
+        assertEquals(WallpaperScene.ASCENSION_STILL, WallpaperScene.ASCENSION_STILL.fallbackStill)
+        assertEquals(WallpaperScene.ASCENSION_STILL, WallpaperScene.ASCENSION_FLOW.fallbackStill)
+        assertEquals(WallpaperScene.ORIGINAL, WallpaperScene.AURA_PULSE.fallbackStill)
+    }
+
     @Test fun sceneIdsRoundTripAndUnknownValuesFallBackToOriginal() {
         assertEquals(WallpaperScene.ORIGINAL, WallpaperScene.fromId(null))
         assertEquals(WallpaperScene.ORIGINAL, WallpaperScene.fromId("not-a-real-scene"))
