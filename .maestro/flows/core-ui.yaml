@@ -20,16 +20,16 @@ appId: com.rezoxnemesis.kebtee
 - tapOn: "Ascension Flow"
 - assertVisible: "Ascension Flow animated preview"
 - takeScreenshot: "keptee-wallpaper-video-preview"
-- scrollUntilVisible:
-    element: "Video frame cadence"
-- assertVisible: "Video frame cadence"
-- takeScreenshot: "keptee-wallpaper-video-scene"
-# Selected wallpaper scenes must survive process death.
+# Selected video scenes must survive process death. Re-assert the actual animated
+# preview instead of scrolling through the embedded VideoView to an unrelated label;
+# that gesture is unreliable on emulators because the platform video surface can
+# consume the swipe before Compose's parent scroll container sees it.
 - stopApp
 - launchApp
 - scrollUntilVisible:
-    element: "Video frame cadence"
-- assertVisible: "Video frame cadence"
+    element: "Ascension Flow animated preview"
+- assertVisible: "Ascension Flow animated preview"
+- takeScreenshot: "keptee-wallpaper-video-persisted"
 - scrollUntilVisible:
     element: "Original Silhouette"
     direction: UP
