@@ -54,6 +54,24 @@ data class LauncherLayout(
             swipeDown = swipeDown.takeIf { it in ACTIONS } ?: "Search", doubleTap = doubleTap.takeIf { it in ACTIONS } ?: "Search")
     }
 
+    fun pruneUnavailable(availableKeys: Set<String>): LauncherLayout {
+        val available = availableKeys.filter(::validAppKey).toSet()
+        return copy(
+            pages = pages.map { page ->
+                page.mapNotNull { item ->
+                    val apps = item.apps.filter(available::contains).distinct()
+                    when {
+                        apps.isEmpty() -> null
+                        !item.isFolder && apps.size == 1 -> HomeItem(apps.single(), apps)
+                        else -> item.copy(apps = apps)
+                    }
+                }
+            },
+            dock = dock.filter(available::contains),
+            hidden = hidden.filter(available::contains)
+        ).normalized()
+    }
+
     fun remove(key: String): LauncherLayout = copy(pages = pages.map { page -> page.mapNotNull { item ->
         val apps = item.apps - key
         when {
