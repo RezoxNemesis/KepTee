@@ -140,6 +140,7 @@ class MainActivity : ComponentActivity() {
                             ValueSlider("Glow intensity", "${(wallpaper.glow * 100).roundToInt()}%", wallpaper.glow, 0f..1f) { update(wallpaper.copy(glow = it)) }
                             ValueSlider("Particle density", wallpaper.particleDensity.toString(), wallpaper.particleDensity.toFloat(), 0f..60f) { update(wallpaper.copy(particleDensity = it.roundToInt())) }
                             SettingsToggle("Touch effects", "Ripple light from a touch on your wallpaper.", wallpaper.touchEffects) { update(wallpaper.copy(touchEffects = it)) }
+                            SettingsToggle("Phone tilt depth", "Subtle parallax while the wallpaper is visible. Automatically pauses in battery saver, reduced motion, and lock-screen dimming.", wallpaper.tiltMotion) { update(wallpaper.copy(tiltMotion = it)) }
                             SettingsToggle("Time effects", "Let the light change through the day.", wallpaper.timeEffects) { update(wallpaper.copy(timeEffects = it)) }
                             SettingsToggle("Charging effects", "A gentle light response while charging.", wallpaper.chargingEffects) { update(wallpaper.copy(chargingEffects = it)) }
                         }
