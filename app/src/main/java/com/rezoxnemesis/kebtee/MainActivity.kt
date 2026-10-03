@@ -153,7 +153,7 @@ class MainActivity : ComponentActivity() {
         }
         val notification = android.app.Notification.Builder(this, "kebtee_updates")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("KebTee notification test")
+            .setContentTitle("KepTee notification test")
             .setContentText("Notifications are working on this device.")
             .setAutoCancel(true)
             .build()
@@ -162,8 +162,8 @@ class MainActivity : ComponentActivity() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel("kebtee_updates", "KebTee updates", NotificationManager.IMPORTANCE_DEFAULT)
-                .apply { description = "Optional updates from KebTee." }
+            val channel = NotificationChannel("kebtee_updates", "KepTee updates", NotificationManager.IMPORTANCE_DEFAULT)
+                .apply { description = "Optional updates from KepTee." }
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
@@ -204,7 +204,7 @@ private fun KebTeeHome(
     var selectedFeature by remember { mutableStateOf<Feature?>(null) }
     val features = listOf(
         Feature("Live Wallpaper", "Animated scenes for your screen", Icons.Default.Wallpaper, Cyan, FeatureAction.WALLPAPER),
-        Feature("Theme Studio", "Choose your KebTee accent", Icons.Default.Palette, Violet, FeatureAction.THEME),
+        Feature("Theme Studio", "Choose your KepTee accent", Icons.Default.Palette, Violet, FeatureAction.THEME),
         Feature("Home Experience", "Open your home-screen settings", Icons.Default.Home, Pink, FeatureAction.HOME),
         Feature("Volume Lab", "Custom in-app audio sliders", Icons.Default.Tune, Cyan, FeatureAction.VOLUME),
         Feature("Notifications", "Manage KebTee notifications", Icons.Default.Notifications, Violet, FeatureAction.NOTIFICATIONS),
@@ -227,7 +227,7 @@ private fun KebTeeHome(
                 )
                 Spacer(Modifier.width(13.dp))
                 Column {
-                    Text("KebTee", fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    Text("KepTee", fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
                     Text("MAKE EVERY PIXEL YOURS", fontSize = 10.sp, letterSpacing = 1.8.sp, color = Cyan)
                 }
                 Spacer(Modifier.weight(1f))
@@ -353,7 +353,7 @@ private fun SilhouettePreview(reduceMotion: Boolean) {
         if (silhouetteBitmap != null) {
             Image(
                 bitmap = silhouetteBitmap,
-                contentDescription = "KebTee monochrome silhouette reference wallpaper",
+                contentDescription = "KepTee monochrome silhouette reference wallpaper",
                 modifier = artworkModifier,
                 contentScale = ContentScale.Fit,
                 alpha = if (reduceMotion) 1f else animatedAlpha
@@ -363,7 +363,7 @@ private fun SilhouettePreview(reduceMotion: Boolean) {
             // painterResource path. Keep the dashboard launch-safe with a vector fallback.
             Image(
                 painter = painterResource(id = R.drawable.ic_kebtee_mark),
-                contentDescription = "KebTee artwork fallback",
+                contentDescription = "KepTee artwork fallback",
                 modifier = artworkModifier.padding(24.dp),
                 contentScale = ContentScale.Fit,
                 alpha = if (reduceMotion) 1f else animatedAlpha
@@ -503,7 +503,7 @@ private fun FeatureDialog(
                     }
                     FeatureAction.CONTROL_CENTER -> {
                         Text(
-                            "A KebTee quick-access hub for Android's native control panels. These shortcuts open the real system controls; Android still owns the notification shade and Quick Settings.",
+                            "A KepTee quick-access hub for Android's native control panels. These shortcuts open the real system controls; Android still owns the notification shade and Quick Settings.",
                             color = Muted, fontSize = 12.sp, lineHeight = 17.sp
                         )
                         Button(onClick = { onOpenSystemSettings("internet") }, modifier = Modifier.fillMaxWidth()) { Text("Internet & Wi-Fi") }
