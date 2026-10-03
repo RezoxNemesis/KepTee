@@ -307,7 +307,9 @@ class KebTeeLiveWallpaperService : WallpaperService() {
                 releaseVideoPlayer()
                 return
             }
-            if (destroyed || !surfaceReady || !surfaceHolder.surface.isValid) {
+            if (destroyed || !visible || !interactive || !surfaceReady || !surfaceHolder.surface.isValid) {
+                // Never initialise or prime a decoder while the wallpaper is hidden or the
+                // display is non-interactive. Existing playback is paused immediately.
                 pauseVideoPlayer()
                 return
             }
@@ -336,8 +338,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
             }
             val player = videoPlayer ?: return
             val locked = deviceLocked && !isPreview
-            val canAnimate = canDraw() && !config.reduceMotion && !config.batterySaver &&
-                !powerSaver && !(locked && config.dimOnLock)
+            val canAnimate = canDraw() && config.videoMotionEnabled(powerSaver, locked)
             val nightFactor = if (config.timeEffects && (hour < 6 || hour >= 21)) 0.92f else 1f
             val chargingFactor = if (config.chargingEffects && charging) 1.06f else 1f
             val playbackSpeed = (config.speed * nightFactor * chargingFactor).coerceIn(0.25f, 2f)

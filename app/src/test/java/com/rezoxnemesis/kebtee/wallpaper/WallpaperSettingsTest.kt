@@ -62,6 +62,17 @@ class WallpaperSettingsTest {
         assertEquals(60, WallpaperSettings(particleDensity = Int.MAX_VALUE).activeParticleCount(false, false))
     }
 
+    @Test fun videoMotionRespectsVisibilityIndependentPowerConstraints() {
+        val video = WallpaperSettings(scene = WallpaperScene.ASCENSION_FLOW)
+        assertEquals(true, video.videoMotionEnabled(false, false))
+        assertEquals(false, WallpaperSettings().videoMotionEnabled(false, false))
+        assertEquals(false, video.copy(reduceMotion = true).videoMotionEnabled(false, false))
+        assertEquals(false, video.copy(batterySaver = true).videoMotionEnabled(false, false))
+        assertEquals(false, video.videoMotionEnabled(true, false))
+        assertEquals(false, video.videoMotionEnabled(false, true))
+        assertEquals(true, video.copy(dimOnLock = false).videoMotionEnabled(false, true))
+    }
+
     @Test fun sceneIdsRoundTripAndUnknownValuesFallBackToOriginal() {
         assertEquals(WallpaperScene.ORIGINAL, WallpaperScene.fromId(null))
         assertEquals(WallpaperScene.ORIGINAL, WallpaperScene.fromId("not-a-real-scene"))

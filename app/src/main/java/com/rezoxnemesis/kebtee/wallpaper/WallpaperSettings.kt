@@ -48,4 +48,7 @@ data class WallpaperSettings(
         reduceMotion || batterySaver || systemPowerSaver || (locked && dimOnLock) -> 0
         else -> particleDensity.coerceIn(0, 60)
     }
+
+    fun videoMotionEnabled(systemPowerSaver: Boolean, locked: Boolean): Boolean =
+        scene.isVideo && !reduceMotion && !batterySaver && !systemPowerSaver && !(locked && dimOnLock)
 }
