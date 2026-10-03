@@ -1,5 +1,6 @@
 package com.rezoxnemesis.kebtee.wallpaper
 
+import android.app.ActivityManager
 import android.app.KeyguardManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -49,6 +50,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         private val sensors = getSystemService(SensorManager::class.java)
         private val rotationSensor = sensors.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
         private val displayManager = getSystemService(DisplayManager::class.java)
+        private val lowRamDevice = getSystemService(ActivityManager::class.java)?.isLowRamDevice == true
         @Volatile private var visible = false
         @Volatile private var surfaceReady = false
         @Volatile private var destroyed = false
@@ -148,7 +150,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
                 lastFrameTime = start
                 drawScene(config, locked, start)
                 handler.removeCallbacks(this)
-                val interval = config.frameIntervalMillis(powerSaver, locked, displayRefreshRateHz)
+                val interval = config.frameIntervalMillis(powerSaver, locked, displayRefreshRateHz, lowRamDevice)
                 if (canDraw() && interval > 0L) {
                     handler.postDelayed(this, (interval - (SystemClock.uptimeMillis() - start)).coerceAtLeast(1L))
                 }
@@ -451,7 +453,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
                     effectPaint.shader = null
                 }
                 effectPaint.color = Color.WHITE
-                val particles = config.activeParticleCount(powerSaver, locked)
+                val particles = config.activeParticleCount(powerSaver, locked, lowRamDevice)
                 for (index in 0 until particles) {
                     val x = ((index * 0.618034f) % 1f) * width + sin(seconds * 0.16f + index) * 9f
                     val y = (1f - ((index * 0.381966f + seconds * 0.015f) % 1f)) * height
