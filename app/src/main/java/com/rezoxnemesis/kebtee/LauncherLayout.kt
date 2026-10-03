@@ -68,7 +68,7 @@ data class LauncherLayout(
                 }
             },
             dock = dock.filter(available::contains),
-            hidden = hidden.filter(available::contains)
+            hidden = hidden.filter(available::contains).toSet()
         ).normalized()
     }
 
