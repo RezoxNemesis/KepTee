@@ -376,9 +376,10 @@ private fun SuppliedVideoPreview(
 ) {
     val context = LocalContext.current
     val mediaFile by produceState<java.io.File?>(initialValue = null, scene) {
-        value = withContext(Dispatchers.IO) {
+        val loaded = withContext(Dispatchers.IO) {
             WallpaperAssetStore.materialize(context.applicationContext, scene)
         }
+        value = loaded
     }
 
     val fallbackModifier = modifier
