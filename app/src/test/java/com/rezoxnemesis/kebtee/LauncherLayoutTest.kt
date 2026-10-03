@@ -14,6 +14,26 @@ class LauncherLayoutTest {
     private val c = "com.example.c/Main"
     private fun app(key: String) = HomeItem(key, listOf(key))
 
+    @Test fun pruningUnavailableAppsCleansPagesDockAndHiddenState() {
+        val layout = LauncherLayout(
+            pages = listOf(
+                listOf(
+                    app(a),
+                    HomeItem("folder:work", listOf(b, c), "Work")
+                )
+            ),
+            dock = listOf(a, c),
+            hidden = setOf(b, c)
+        )
+
+        val repaired = layout.pruneUnavailable(setOf(a, b))
+
+        assertEquals(listOf(listOf(app(a), HomeItem("folder:work", listOf(b), "Work"))), repaired.pages)
+        assertEquals(listOf(a), repaired.dock)
+        assertEquals(setOf(b), repaired.hidden)
+        assertFalse(repaired.pages.flatten().flatMap { it.apps }.contains(c))
+    }
+
     @Test fun normalizingUntrustedSettingsBoundsListsAndUsesSupportedChoices() {
         val layout = LauncherLayout(pages = emptyList(), dock = listOf(a, a, "invalid", b),
             hidden = setOf(a, "invalid"), columns = 99, iconSize = -1,
