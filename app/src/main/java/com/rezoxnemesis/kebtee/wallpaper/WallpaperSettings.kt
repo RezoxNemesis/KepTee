@@ -11,7 +11,8 @@ data class WallpaperSettings(
     val timeEffects: Boolean = true,
     val chargingEffects: Boolean = true,
     val dimOnLock: Boolean = true,
-    val reduceMotion: Boolean = false
+    val reduceMotion: Boolean = false,
+    val tiltMotion: Boolean = true
 ) {
     fun normalized() = copy(
         speed = if (speed.isFinite()) speed.coerceIn(0.25f, 2f) else 1f,
@@ -28,6 +29,9 @@ data class WallpaperSettings(
         batterySaver || systemPowerSaver || (locked && dimOnLock) -> 100L
         else -> 1000L / boundedFps()
     }
+
+    fun tiltEnabled(systemPowerSaver: Boolean, locked: Boolean): Boolean =
+        tiltMotion && !reduceMotion && !batterySaver && !systemPowerSaver && !(locked && dimOnLock)
 
     fun activeParticleCount(systemPowerSaver: Boolean, locked: Boolean): Int = when {
         reduceMotion || batterySaver || systemPowerSaver || (locked && dimOnLock) -> 0
