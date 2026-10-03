@@ -1,9 +1,13 @@
 <resources>
     <style name="Theme.KebTee" parent="android:style/Theme.Material.Light.NoActionBar">
-        <item name="android:fontFamily">sans</item>
-        <item name="android:colorAccent">#8B5CF6</item>
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:colorAccent">#D9DEE3</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:navigationBarColor">#070B18</item>
-        <item name="android:statusBarColor">#070B18</item>
+        <item name="android:navigationBarColor">#000000</item>
+        <item name="android:statusBarColor">#000000</item>
+    </style>
+    <style name="Theme.KepTee.Home" parent="Theme.KebTee">
+        <item name="android:windowShowWallpaper">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
     </style>
 </resources>

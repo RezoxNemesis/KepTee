@@ -1,12 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <queries><intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent></queries>
     <uses-feature android:name="android.software.live_wallpaper" android:required="false" />
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:label="KebTee"
+        android:label="KepTee"
         android:supportsRtl="true"
         android:theme="@style/Theme.KebTee">
         <activity
@@ -17,12 +16,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".HomeLauncherActivity" android:exported="true" android:label="KebTee Home">
+        <activity android:name=".HomeLauncherActivity" android:exported="true" android:label="KepTee Home" android:launchMode="singleTask" android:theme="@style/Theme.KepTee.Home">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.HOME" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>
         </activity>
         <service
+            android:name=".KepTeeNotificationListenerService"
+            android:label="KepTee notification badges"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+        <service
             android:name=".wallpaper.KebTeeLiveWallpaperService"
-            android:label="KebTee Silhouette"
+            android:label="KepTee Silhouette"
             android:permission="android.permission.BIND_WALLPAPER"
             android:exported="true">
             <intent-filter>

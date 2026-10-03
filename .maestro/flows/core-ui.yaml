@@ -2,25 +2,92 @@ appId: com.rezoxnemesis.kebtee
 ---
 - launchApp:
     clearState: true
-- assertVisible: "KebTee"
-- assertVisible: "CUSTOMIZATION LABS"
-- takeScreenshot: "keptee-dashboard"
-- tapOn: "Theme Studio"
-- assertVisible: "Cyber cyan"
-- tapOn: "Cyber cyan"
-- tapOn: "Done"
-- tapOn: "Effects & Motion"
-- assertVisible: "Reduced-motion preview"
-- tapOn: "Reduced-motion preview"
-- tapOn: "Done"
-- tapOn: "Volume Lab"
-- assertVisible: "Media"
-- assertVisible: "Ringtone"
-- takeScreenshot: "keptee-volume-lab"
-- tapOn: "Done"
-- tapOn: "Notifications"
-- assertVisible: "Send test notification"
-- assertVisible: "Notification settings"
-- takeScreenshot: "keptee-notification-controls"
-- tapOn: "Done"
-- assertVisible: "KebTee"
+# The Google APIs emulator can occasionally surface a transient Pixel Launcher ANR over
+# KepTee during cold boot. Dismiss only that system-owned dialog when it appears.
+- runFlow:
+    when:
+      visible: "Pixel Launcher isn't responding"
+    commands:
+      - tapOn: "Close app"
+- assertVisible: "Make yourself at home"
+- scrollUntilVisible:
+    element: "Skip setup"
+- tapOn: "Skip setup"
+- assertVisible: "Open launcher"
+- takeScreenshot: "keptee-settings"
+- scrollUntilVisible:
+    element: "Ascension Flow"
+- tapOn: "Ascension Flow"
+- assertVisible: "Ascension Flow animated preview"
+- takeScreenshot: "keptee-wallpaper-video-preview"
+# Selected video scenes must survive process death. Re-assert the actual animated
+# preview instead of scrolling through the embedded VideoView to an unrelated label;
+# that gesture is unreliable on emulators because the platform video surface can
+# consume the swipe before Compose's parent scroll container sees it.
+- stopApp
+- launchApp
+- scrollUntilVisible:
+    element: "Ascension Flow animated preview"
+- assertVisible: "Ascension Flow animated preview"
+- takeScreenshot: "keptee-wallpaper-video-persisted"
+- scrollUntilVisible:
+    element: "Original Silhouette"
+    direction: UP
+- tapOn: "Original Silhouette"
+- scrollUntilVisible:
+    element: "15 FPS"
+- tapOn: "15 FPS"
+- assertVisible: "15 FPS selected"
+- scrollUntilVisible:
+    element: "Dim on lock screen"
+- assertVisible:
+    text: "Reduced motion toggle"
+    checked: false
+- tapOn: "Reduced motion toggle"
+- assertVisible:
+    text: "Reduced motion toggle"
+    checked: true
+- takeScreenshot: "keptee-performance"
+# Preferences must survive process death, not only Compose recomposition.
+- stopApp
+- launchApp
+- assertNotVisible: "Make yourself at home"
+- scrollUntilVisible:
+    element: "15 FPS"
+- assertVisible: "15 FPS selected"
+- scrollUntilVisible:
+    element: "Dim on lock screen"
+- assertVisible:
+    text: "Reduced motion toggle"
+    checked: true
+- scrollUntilVisible:
+    element: "Reset wallpaper settings"
+- tapOn: "Reset wallpaper settings"
+- tapOn: "Cancel"
+- tapOn: "Reset wallpaper settings"
+- tapOn: "Reset"
+- scrollUntilVisible:
+    element: "Dim on lock screen"
+- assertVisible:
+    text: "Reduced motion toggle"
+    checked: false
+- scrollUntilVisible:
+    element: "30 FPS"
+    direction: UP
+- assertVisible: "30 FPS selected"
+- scrollUntilVisible:
+    element: "Open launcher"
+    direction: UP
+- tapOn: "Open launcher"
+- assertVisible: "All apps"
+- takeScreenshot: "keptee-home"
+- tapOn: "All apps"
+- assertVisible: "Search apps"
+- takeScreenshot: "keptee-app-drawer"
+- tapOn: "Search apps"
+- inputText: "zzzkepteenomatchzzz"
+- assertVisible: "No apps match that search."
+- eraseText
+- hideKeyboard
+- assertNotVisible: "No apps match that search."
+- takeScreenshot: "keptee-search-restored"
