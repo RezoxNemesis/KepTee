@@ -96,7 +96,8 @@ internal object LauncherBackupCodec {
                 .put("particleDensity", settings.particleDensity).put("touchEffects", settings.touchEffects)
                 .put("batterySaver", settings.batterySaver).put("fps", settings.fps)
                 .put("timeEffects", settings.timeEffects).put("chargingEffects", settings.chargingEffects)
-                .put("dimOnLock", settings.dimOnLock).put("reduceMotion", settings.reduceMotion)).toString()
+                .put("dimOnLock", settings.dimOnLock).put("reduceMotion", settings.reduceMotion)
+                .put("tiltMotion", settings.tiltMotion)).toString()
         require(raw.toByteArray(Charsets.UTF_8).size <= MAX_BYTES)
         return raw
     }
@@ -120,7 +121,8 @@ internal object LauncherBackupCodec {
             speed = speed, glow = glow, particleDensity = particles,
             touchEffects = flag(value, "touchEffects"), batterySaver = flag(value, "batterySaver"), fps = fps,
             timeEffects = flag(value, "timeEffects"), chargingEffects = flag(value, "chargingEffects"),
-            dimOnLock = flag(value, "dimOnLock"), reduceMotion = flag(value, "reduceMotion")
+            dimOnLock = flag(value, "dimOnLock"), reduceMotion = flag(value, "reduceMotion"),
+            tiltMotion = optionalFlag(value, "tiltMotion", true)
         ))
     }
 
@@ -177,6 +179,11 @@ internal object LauncherBackupCodec {
         val value = number(json, key)
         require(value % 1 == 0.0 && value >= Int.MIN_VALUE && value <= Int.MAX_VALUE) { "Expected integer setting" }
         return value.toInt()
+    }
+
+    private fun optionalFlag(json: JSONObject, key: String, default: Boolean): Boolean {
+        if (!json.has(key)) return default
+        return flag(json, key)
     }
 
     private fun flag(json: JSONObject, key: String): Boolean {
