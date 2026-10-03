@@ -164,12 +164,16 @@ class HomeLauncherActivity : ComponentActivity() {
                         save(LauncherLayout(dock = defaults.map { it.key }))
                     }
                 }
-                // Read after migration/default initialization; the Compose state captured by this
-                // coroutine may still hold the pre-migration layout.
-                val currentLayout = LauncherLayoutStore.read(preferences)
-                val availableKeys = result.asSequence().map { it.key }.toSet()
-                val repaired = currentLayout.pruneUnavailable(availableKeys)
-                if (repaired != currentLayout) save(repaired)
+                // An empty query can be transient (for example, during package/profile changes).
+                // Never erase a user's saved layout unless the installed-app index is non-empty.
+                if (result.isNotEmpty()) {
+                    // Read after migration/default initialization; the Compose state captured by this
+                    // coroutine may still hold the pre-migration layout.
+                    val currentLayout = LauncherLayoutStore.read(preferences)
+                    val availableKeys = result.asSequence().map { it.key }.toSet()
+                    val repaired = currentLayout.pruneUnavailable(availableKeys)
+                    if (repaired != currentLayout) save(repaired)
+                }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: RuntimeException) { loadError = "Apps could not be loaded. Tap Retry." }
             finally { if (isActive) loading = false }
