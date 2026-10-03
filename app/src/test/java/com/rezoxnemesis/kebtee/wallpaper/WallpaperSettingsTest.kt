@@ -62,6 +62,14 @@ class WallpaperSettingsTest {
         assertEquals(60, WallpaperSettings(particleDensity = Int.MAX_VALUE).activeParticleCount(false, false))
     }
 
+    @Test fun lowRamDevicesAutomaticallyUseALighterStillSceneBudget() {
+        val settings = WallpaperSettings(fps = 120, particleDensity = 41)
+        assertEquals(33L, settings.frameIntervalMillis(false, false, 120f, lowRamDevice = true))
+        assertEquals(21, settings.activeParticleCount(false, false, lowRamDevice = true))
+        assertEquals(0, settings.copy(batterySaver = true).activeParticleCount(false, false, lowRamDevice = true))
+        assertEquals(0L, settings.copy(reduceMotion = true).frameIntervalMillis(false, false, 120f, lowRamDevice = true))
+    }
+
     @Test fun videoMotionRespectsVisibilityIndependentPowerConstraints() {
         val video = WallpaperSettings(scene = WallpaperScene.ASCENSION_FLOW)
         assertEquals(true, video.videoMotionEnabled(false, false))
