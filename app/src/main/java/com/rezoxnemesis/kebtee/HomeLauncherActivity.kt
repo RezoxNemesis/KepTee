@@ -211,7 +211,7 @@ class HomeLauncherActivity : ComponentActivity() {
                 )
             }
             when (sort) {
-                "Recent", "Most used" -> orderLauncherUsage(usageEntries, sort).mapNotNull(byKey::get)
+                "Recent", "Most used" -> orderLauncherUsage(usageEntries, sort).mapNotNull { entry -> byKey[entry.key] }
                 else -> filtered
             }
         }
