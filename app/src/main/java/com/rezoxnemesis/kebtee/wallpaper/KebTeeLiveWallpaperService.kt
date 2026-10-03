@@ -16,6 +16,10 @@ import android.graphics.Paint
 import android.graphics.RadialGradient
 import android.graphics.RectF
 import android.graphics.Shader
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.BatteryManager
 import android.os.Handler
 import android.os.HandlerThread
@@ -39,6 +43,8 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         private val preferences = getSharedPreferences(WallpaperPreferences.FILE_NAME, MODE_PRIVATE)
         private val power = getSystemService(PowerManager::class.java)
         private val keyguard = getSystemService(KeyguardManager::class.java)
+        private val sensors = getSystemService(SensorManager::class.java)
+        private val rotationSensor = sensors.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
         @Volatile private var visible = false
         @Volatile private var surfaceReady = false
         @Volatile private var destroyed = false
@@ -70,10 +76,33 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         private var touchX = 0f
         private var touchY = 0f
         private var touchAt = -10_000L
+        private var tiltSensorRegistered = false
+        private var tiltX = 0f
+        private var tiltY = 0f
+        private val rotationMatrix = FloatArray(9)
+        private val orientation = FloatArray(3)
+
+        private val tiltListener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) {
+                if (event.sensor.type != Sensor.TYPE_ROTATION_VECTOR) return
+                val locked = deviceLocked && !isPreview
+                if (!settings.tiltEnabled(powerSaver, locked) || !canDraw()) return
+                SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
+                SensorManager.getOrientation(rotationMatrix, orientation)
+                val targetX = (-orientation[2] / 0.55f).coerceIn(-1f, 1f)
+                val targetY = (-orientation[1] / 0.55f).coerceIn(-1f, 1f)
+                tiltX += (targetX - tiltX) * 0.14f
+                tiltY += (targetY - tiltY) * 0.14f
+                requestFrame()
+            }
+
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
+        }
 
         private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (WallpaperPreferences.isWallpaperKey(key)) {
                 settings = WallpaperPreferences.read(preferences)
+                updateTiltSensorRegistration()
                 requestFrame()
             }
         }
@@ -86,6 +115,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
                 if (intent?.action == Intent.ACTION_BATTERY_CHANGED) {
                     charging = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0
                 }
+                updateTiltSensorRegistration()
                 requestFrame()
             }
         }
@@ -123,6 +153,27 @@ class KebTeeLiveWallpaperService : WallpaperService() {
             handler.post(scheduleFrame)
         }
 
+        private fun updateTiltSensorRegistration() {
+            if (destroyed) return
+            handler.post {
+                val locked = deviceLocked && !isPreview
+                val shouldListen = canDraw() && settings.tiltEnabled(powerSaver, locked) && rotationSensor != null
+                if (shouldListen && !tiltSensorRegistered) {
+                    tiltSensorRegistered = sensors.registerListener(
+                        tiltListener,
+                        rotationSensor,
+                        SensorManager.SENSOR_DELAY_GAME,
+                        handler
+                    )
+                } else if (!shouldListen && tiltSensorRegistered) {
+                    sensors.unregisterListener(tiltListener)
+                    tiltSensorRegistered = false
+                    tiltX = 0f
+                    tiltY = 0f
+                }
+            }
+        }
+
         override fun onCreate(surfaceHolder: SurfaceHolder) {
             super.onCreate(surfaceHolder)
             setTouchEventsEnabled(true)
@@ -146,23 +197,27 @@ class KebTeeLiveWallpaperService : WallpaperService() {
             interactive = power.isInteractive
             deviceLocked = keyguard.isKeyguardLocked
             handler.post { lastFrameTime = 0L }
+            updateTiltSensorRegistration()
             requestFrame()
         }
 
         override fun onSurfaceCreated(holder: SurfaceHolder) {
             super.onSurfaceCreated(holder)
             surfaceReady = true
+            updateTiltSensorRegistration()
             requestFrame()
         }
 
         override fun onSurfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
             super.onSurfaceChanged(holder, format, width, height)
             surfaceReady = true
+            updateTiltSensorRegistration()
             requestFrame()
         }
 
         override fun onSurfaceDestroyed(holder: SurfaceHolder) {
             surfaceReady = false
+            updateTiltSensorRegistration()
             requestFrame()
             super.onSurfaceDestroyed(holder)
         }
@@ -185,6 +240,8 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         override fun onDestroy() {
             destroyed = true
             visible = false
+            sensors.unregisterListener(tiltListener)
+            tiltSensorRegistered = false
             handler.removeCallbacksAndMessages(null)
             preferences.unregisterOnSharedPreferenceChangeListener(preferenceListener)
             if (receiverRegistered) unregisterReceiver(stateReceiver)
@@ -211,12 +268,15 @@ class KebTeeLiveWallpaperService : WallpaperService() {
                 val seconds = if (config.reduceMotion) 0f else animationSeconds
                 val pulse = if (config.reduceMotion) 1f else SilhouetteAnimationMath.breathingPulse(seconds)
                 // Fit, rather than fill: the source composition is never cropped.
-                val fit = minOf(width / bitmap.width, height / bitmap.height) * (0.97f + pulse * 0.025f)
+                val fit = minOf(width / bitmap.width, height / bitmap.height) * (0.97f + pulse * 0.015f)
                 val imageWidth = bitmap.width * fit
                 val imageHeight = bitmap.height * fit
-                val shift = if (config.reduceMotion) 0f else offset * width * 0.01f
-                destination.set((width - imageWidth) / 2f + shift, (height - imageHeight) / 2f,
-                    (width + imageWidth) / 2f + shift, (height + imageHeight) / 2f)
+                val tiltActive = config.tiltEnabled(powerSaver, locked)
+                val shiftX = (if (config.reduceMotion) 0f else offset * width * 0.01f) +
+                    if (tiltActive) tiltX * width * 0.006f else 0f
+                val shiftY = if (tiltActive) tiltY * height * 0.003f else 0f
+                destination.set((width - imageWidth) / 2f + shiftX, (height - imageHeight) / 2f + shiftY,
+                    (width + imageWidth) / 2f + shiftX, (height + imageHeight) / 2f + shiftY)
                 val night = config.timeEffects && (hour < 6 || hour >= 21)
                 val dim = if (locked && config.dimOnLock) 0.65f else if (night) 0.86f else 1f
                 val brightness = ((0.78f + pulse * 0.22f) * dim).coerceIn(0.35f, 1f)
