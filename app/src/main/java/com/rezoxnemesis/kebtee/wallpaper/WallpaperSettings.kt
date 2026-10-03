@@ -24,10 +24,20 @@ data class WallpaperSettings(
     private fun boundedFps(): Int = when { fps <= 15 -> 15; fps <= 30 -> 30; fps <= 60 -> 60; else -> 120 }
 
     /** Zero means draw only in response to a state change, with no animation loop. */
-    fun frameIntervalMillis(systemPowerSaver: Boolean, locked: Boolean): Long = when {
+    fun frameIntervalMillis(
+        systemPowerSaver: Boolean,
+        locked: Boolean,
+        displayRefreshRateHz: Float = Float.NaN
+    ): Long = when {
         reduceMotion -> 0L
         batterySaver || systemPowerSaver || (locked && dimOnLock) -> 100L
-        else -> 1000L / boundedFps()
+        else -> {
+            val requested = boundedFps().toFloat()
+            val effective = if (displayRefreshRateHz.isFinite() && displayRefreshRateHz > 0f) {
+                minOf(requested, displayRefreshRateHz)
+            } else requested
+            (1000f / effective).toLong().coerceAtLeast(1L)
+        }
     }
 
     fun tiltEnabled(systemPowerSaver: Boolean, locked: Boolean): Boolean =
