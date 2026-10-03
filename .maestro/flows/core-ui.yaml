@@ -9,6 +9,23 @@ appId: com.rezoxnemesis.kebtee
 - assertVisible: "Open launcher"
 - takeScreenshot: "keptee-settings"
 - scrollUntilVisible:
+    element: "Ascension Flow"
+- tapOn: "Ascension Flow"
+- scrollUntilVisible:
+    element: "Video frame cadence"
+- assertVisible: "Video frame cadence"
+- takeScreenshot: "keptee-wallpaper-video-scene"
+# Selected wallpaper scenes must survive process death.
+- stopApp
+- launchApp
+- scrollUntilVisible:
+    element: "Video frame cadence"
+- assertVisible: "Video frame cadence"
+- scrollUntilVisible:
+    element: "Original Silhouette"
+    direction: UP
+- tapOn: "Original Silhouette"
+- scrollUntilVisible:
     element: "15 FPS"
 - tapOn: "15 FPS"
 - assertVisible: "15 FPS selected"
