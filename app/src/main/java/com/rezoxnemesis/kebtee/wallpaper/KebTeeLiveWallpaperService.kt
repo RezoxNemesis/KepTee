@@ -20,12 +20,14 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.hardware.display.DisplayManager
 import android.os.BatteryManager
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.PowerManager
 import android.os.SystemClock
 import android.service.wallpaper.WallpaperService
+import android.view.Display
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import androidx.core.content.ContextCompat
@@ -45,6 +47,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         private val keyguard = getSystemService(KeyguardManager::class.java)
         private val sensors = getSystemService(SensorManager::class.java)
         private val rotationSensor = sensors.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+        private val displayManager = getSystemService(DisplayManager::class.java)
         @Volatile private var visible = false
         @Volatile private var surfaceReady = false
         @Volatile private var destroyed = false
@@ -54,6 +57,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         @Volatile private var charging = false
         @Volatile private var deviceLocked = keyguard.isKeyguardLocked
         @Volatile private var hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        @Volatile private var displayRefreshRateHz = currentDisplayRefreshRate()
         private var receiverRegistered = false
         // Accessed only by the render thread, including disposal.
         private var figureBitmap: Bitmap? = null
@@ -112,6 +116,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
                 interactive = power.isInteractive
                 deviceLocked = keyguard.isKeyguardLocked
                 hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+                displayRefreshRateHz = currentDisplayRefreshRate()
                 if (intent?.action == Intent.ACTION_BATTERY_CHANGED) {
                     charging = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0
                 }
@@ -131,7 +136,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
                 lastFrameTime = start
                 drawScene(config, locked, start)
                 handler.removeCallbacks(this)
-                val interval = config.frameIntervalMillis(powerSaver, locked)
+                val interval = config.frameIntervalMillis(powerSaver, locked, displayRefreshRateHz)
                 if (canDraw() && interval > 0L) {
                     handler.postDelayed(this, (interval - (SystemClock.uptimeMillis() - start)).coerceAtLeast(1L))
                 }
@@ -196,6 +201,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
             visible = isVisible
             interactive = power.isInteractive
             deviceLocked = keyguard.isKeyguardLocked
+            displayRefreshRateHz = currentDisplayRefreshRate()
             handler.post { lastFrameTime = 0L }
             updateTiltSensorRegistration()
             requestFrame()
@@ -211,6 +217,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         override fun onSurfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
             super.onSurfaceChanged(holder, format, width, height)
             surfaceReady = true
+            displayRefreshRateHz = currentDisplayRefreshRate()
             updateTiltSensorRegistration()
             requestFrame()
         }
@@ -250,6 +257,9 @@ class KebTeeLiveWallpaperService : WallpaperService() {
             renderThread.quitSafely()
             super.onDestroy()
         }
+
+        private fun currentDisplayRefreshRate(): Float =
+            displayManager.getDisplay(Display.DEFAULT_DISPLAY)?.refreshRate ?: Float.NaN
 
         private fun drawScene(config: WallpaperSettings, locked: Boolean, now: Long) {
             if (!surfaceHolder.surface.isValid) return
