@@ -21,6 +21,7 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.hardware.display.DisplayManager
+import android.media.MediaPlayer
 import android.os.BatteryManager
 import android.os.Handler
 import android.os.HandlerThread
@@ -61,6 +62,10 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         private var receiverRegistered = false
         // Accessed only by the render thread, including disposal.
         private var figureBitmap: Bitmap? = null
+        private var bitmapScene: WallpaperScene? = null
+        private var videoPlayer: MediaPlayer? = null
+        private var videoScene: WallpaperScene? = null
+        private var appliedVideoSpeed = Float.NaN
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
         private val effectPaint = Paint(Paint.ANTI_ALIAS_FLAG)
         private val destination = RectF()
@@ -126,9 +131,15 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         }
         private val drawFrame = object : Runnable {
             override fun run() {
+                val config = settings
+                if (config.scene.isVideo) {
+                    syncVideoScene(config)
+                    lastFrameTime = 0L
+                    return
+                }
+                releaseVideoPlayer()
                 if (!canDraw()) { lastFrameTime = 0L; return }
                 val start = SystemClock.uptimeMillis()
-                val config = settings
                 val locked = deviceLocked && !isPreview
                 if (lastFrameTime != 0L && !config.reduceMotion) {
                     animationSeconds += (start - lastFrameTime).coerceAtMost(100L) / 1000f * config.speed
@@ -149,7 +160,13 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         // that frame's callback cleanup, especially when reduced motion has no next tick.
         private val scheduleFrame = Runnable {
             handler.removeCallbacks(drawFrame)
-            if (canDraw()) handler.post(drawFrame) else lastFrameTime = 0L
+            if (settings.scene.isVideo) {
+                syncVideoScene(settings)
+                lastFrameTime = 0L
+            } else {
+                releaseVideoPlayer()
+                if (canDraw()) handler.post(drawFrame) else lastFrameTime = 0L
+            }
         }
 
         private fun requestFrame() {
@@ -162,7 +179,8 @@ class KebTeeLiveWallpaperService : WallpaperService() {
             if (destroyed) return
             handler.post {
                 val locked = deviceLocked && !isPreview
-                val shouldListen = canDraw() && settings.tiltEnabled(powerSaver, locked) && rotationSensor != null
+                val shouldListen = canDraw() && !settings.scene.isVideo &&
+                    settings.tiltEnabled(powerSaver, locked) && rotationSensor != null
                 if (shouldListen && !tiltSensorRegistered) {
                     tiltSensorRegistered = sensors.registerListener(
                         tiltListener,
@@ -225,6 +243,7 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         override fun onSurfaceDestroyed(holder: SurfaceHolder) {
             surfaceReady = false
             updateTiltSensorRegistration()
+            handler.post { releaseVideoPlayer() }
             requestFrame()
             super.onSurfaceDestroyed(holder)
         }
@@ -235,7 +254,8 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         }
 
         override fun onTouchEvent(event: MotionEvent) {
-            if (event.actionMasked == MotionEvent.ACTION_DOWN && settings.touchEffects && !settings.reduceMotion) {
+            if (event.actionMasked == MotionEvent.ACTION_DOWN && !settings.scene.isVideo &&
+                settings.touchEffects && !settings.reduceMotion) {
                 val x = event.x
                 val y = event.y
                 handler.post { touchX = x; touchY = y; touchAt = SystemClock.uptimeMillis() }
@@ -252,8 +272,14 @@ class KebTeeLiveWallpaperService : WallpaperService() {
             handler.removeCallbacksAndMessages(null)
             preferences.unregisterOnSharedPreferenceChangeListener(preferenceListener)
             if (receiverRegistered) unregisterReceiver(stateReceiver)
-            // Recycling is queued behind an in-flight frame, never racing drawBitmap.
-            handler.post { figureBitmap?.recycle(); figureBitmap = null; glowShader = null }
+            // Cleanup is queued behind an in-flight frame so resources never race rendering.
+            handler.post {
+                releaseVideoPlayer()
+                figureBitmap?.recycle()
+                figureBitmap = null
+                bitmapScene = null
+                glowShader = null
+            }
             renderThread.quitSafely()
             super.onDestroy()
         }
@@ -261,11 +287,98 @@ class KebTeeLiveWallpaperService : WallpaperService() {
         private fun currentDisplayRefreshRate(): Float =
             displayManager.getDisplay(Display.DEFAULT_DISPLAY)?.refreshRate ?: Float.NaN
 
+        private fun bitmapFor(scene: WallpaperScene): Bitmap? = when (scene) {
+            WallpaperScene.ASCENSION_STILL -> WallpaperAssetStore.decodeStill(this@KebTeeLiveWallpaperService)
+            else -> BitmapFactory.decodeResource(
+                resources,
+                R.drawable.kebtee_silhouette,
+                BitmapFactory.Options().apply { inScaled = false }
+            )
+        }
+
+        /**
+         * Video scenes use Android's decoder directly on the wallpaper Surface. The authored
+         * resolution and frame cadence are retained; the render loop does not allocate Bitmaps
+         * for video frames.
+         */
+        private fun syncVideoScene(config: WallpaperSettings) {
+            if (!config.scene.isVideo) {
+                releaseVideoPlayer()
+                return
+            }
+            if (destroyed || !surfaceReady || !surfaceHolder.surface.isValid) {
+                pauseVideoPlayer()
+                return
+            }
+            figureBitmap?.recycle()
+            figureBitmap = null
+            bitmapScene = null
+
+            val mediaFile = WallpaperAssetStore.materialize(this@KebTeeLiveWallpaperService, config.scene) ?: return
+            if (videoPlayer == null || videoScene != config.scene) {
+                releaseVideoPlayer()
+                videoPlayer = try {
+                    MediaPlayer().apply {
+                        setDataSource(mediaFile.absolutePath)
+                        setSurface(surfaceHolder.surface)
+                        isLooping = true
+                        setVolume(0f, 0f)
+                        setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT)
+                        prepare()
+                    }
+                } catch (_: Exception) {
+                    null
+                }
+                videoScene = if (videoPlayer != null) config.scene else null
+                appliedVideoSpeed = Float.NaN
+            }
+            val player = videoPlayer ?: return
+            val locked = deviceLocked && !isPreview
+            val canAnimate = canDraw() && !config.reduceMotion && !config.batterySaver &&
+                !powerSaver && !(locked && config.dimOnLock)
+            val nightFactor = if (config.timeEffects && (hour < 6 || hour >= 21)) 0.92f else 1f
+            val chargingFactor = if (config.chargingEffects && charging) 1.06f else 1f
+            val playbackSpeed = (config.speed * nightFactor * chargingFactor).coerceIn(0.25f, 2f)
+            if (!appliedVideoSpeed.isFinite() || kotlin.math.abs(appliedVideoSpeed - playbackSpeed) > 0.01f) {
+                try {
+                    player.playbackParams = player.playbackParams.setSpeed(playbackSpeed)
+                    appliedVideoSpeed = playbackSpeed
+                } catch (_: IllegalStateException) {
+                } catch (_: IllegalArgumentException) {
+                }
+            }
+
+            try {
+                if (canAnimate) {
+                    if (!player.isPlaying) player.start()
+                } else {
+                    if (player.isPlaying) player.pause()
+                    if (config.reduceMotion && player.currentPosition > 600) player.seekTo(0)
+                }
+            } catch (_: IllegalStateException) {
+            }
+        }
+
+        private fun pauseVideoPlayer() {
+            try {
+                if (videoPlayer?.isPlaying == true) videoPlayer?.pause()
+            } catch (_: IllegalStateException) { }
+        }
+
+        private fun releaseVideoPlayer() {
+            val player = videoPlayer ?: return
+            videoPlayer = null
+            videoScene = null
+            appliedVideoSpeed = Float.NaN
+            try { player.release() } catch (_: RuntimeException) { }
+        }
+
         private fun drawScene(config: WallpaperSettings, locked: Boolean, now: Long) {
             if (!surfaceHolder.surface.isValid) return
-            if (figureBitmap == null) {
-                figureBitmap = BitmapFactory.decodeResource(resources, R.drawable.kebtee_silhouette,
-                    BitmapFactory.Options().apply { inScaled = false }) ?: return
+            if (figureBitmap == null || bitmapScene != config.scene) {
+                figureBitmap?.recycle()
+                figureBitmap = bitmapFor(config.scene) ?: return
+                bitmapScene = config.scene
             }
             val bitmap = figureBitmap ?: return
             var canvas: Canvas? = null

@@ -19,6 +19,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -34,7 +35,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rezoxnemesis.kebtee.wallpaper.KebTeeLiveWallpaperService
+import com.rezoxnemesis.kebtee.wallpaper.WallpaperAssetStore
 import com.rezoxnemesis.kebtee.wallpaper.WallpaperPreferences
+import com.rezoxnemesis.kebtee.wallpaper.WallpaperScene
 import com.rezoxnemesis.kebtee.wallpaper.WallpaperSettings
 import kotlin.math.roundToInt
 
@@ -124,48 +127,99 @@ class MainActivity : ComponentActivity() {
                         HorizontalDivider(color = Color(0xFF292B2E))
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text("LIVE WALLPAPER", fontSize = 11.sp, letterSpacing = 2.sp, color = SettingsMuted)
-                            Text("Silhouette", fontSize = 28.sp, fontWeight = FontWeight.Light)
-                            RasterResourceImage(
-                                resId = R.drawable.kebtee_silhouette,
-                                contentDescription = "Original KepTee silhouette artwork",
-                                modifier = Modifier.fillMaxWidth().height(200.dp).background(Color.Black)
+                            Text(wallpaper.scene.title, fontSize = 28.sp, fontWeight = FontWeight.Light)
+                            Row(
+                                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                WallpaperScene.entries.forEach { scene ->
+                                    FilterChip(
+                                        selected = wallpaper.scene == scene,
+                                        onClick = { update(wallpaper.copy(scene = scene)) },
+                                        label = { Text(scene.title, maxLines = 1) },
+                                        modifier = Modifier.semantics {
+                                            contentDescription = "${scene.title} wallpaper scene"
+                                        }
+                                    )
+                                }
+                            }
+                            when (wallpaper.scene) {
+                                WallpaperScene.ASCENSION_STILL, WallpaperScene.ASCENSION_FLOW -> RasterSuppliedStillImage(
+                                    contentDescription = "${wallpaper.scene.title} wallpaper preview",
+                                    modifier = Modifier.fillMaxWidth().height(260.dp).background(Color.Black)
+                                )
+                                else -> RasterResourceImage(
+                                    resId = R.drawable.kebtee_silhouette,
+                                    contentDescription = "${wallpaper.scene.title} wallpaper preview",
+                                    modifier = Modifier.fillMaxWidth().height(260.dp).background(Color.Black)
+                                )
+                            }
+                            val sceneDescription = when (wallpaper.scene) {
+                                WallpaperScene.ORIGINAL -> "The approved original silhouette with KepTee-rendered aura, particles, touch response and depth."
+                                WallpaperScene.ASCENSION_STILL -> "Your supplied high-detail ascension artwork, animated by KepTee with aura, particles, touch response and depth."
+                                WallpaperScene.ASCENSION_FLOW -> "Your supplied 1080 × 1920 / 30 FPS ascension motion loop, played directly by Android's media pipeline."
+                                WallpaperScene.AURA_PULSE -> "Your supplied 1440 × 2560 / 24 FPS monochrome aura loop, played directly by Android's media pipeline."
+                            }
+                            Text(
+                                if (wallpaperApplied) "${wallpaper.scene.title} is selected. Controls below update the live wallpaper immediately. $sceneDescription"
+                                else "$sceneDescription Preview the real wallpaper in Android before applying it.",
+                                color = SettingsMuted,
+                                fontSize = 13.sp
                             )
-                            Text(if (wallpaperApplied) "Silhouette is active. Controls below update it immediately." else "Original artwork with light, particles and motion. Preview the real wallpaper in Android before applying it.", color = SettingsMuted, fontSize = 13.sp)
-                            Button(onClick = ::openWallpaperPicker, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)) { Text("Choose & Apply Wallpaper") }
+                            Button(onClick = ::openWallpaperPicker, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)) { Text("Preview & Apply Live Wallpaper") }
                             Text("Android controls whether a live wallpaper appears on Home, the lock screen, or both. Available choices depend on your device.", color = SettingsMuted, fontSize = 12.sp)
                         }
                         SettingsPanel {
                             Text("Light & motion", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                             ValueSlider("Animation speed", "${(wallpaper.speed * 100).roundToInt()}%", wallpaper.speed, 0.25f..2f) { update(wallpaper.copy(speed = it)) }
-                            ValueSlider("Glow intensity", "${(wallpaper.glow * 100).roundToInt()}%", wallpaper.glow, 0f..1f) { update(wallpaper.copy(glow = it)) }
-                            ValueSlider("Particle density", wallpaper.particleDensity.toString(), wallpaper.particleDensity.toFloat(), 0f..60f) { update(wallpaper.copy(particleDensity = it.roundToInt())) }
-                            SettingsToggle("Touch effects", "Ripple light from a touch on your wallpaper.", wallpaper.touchEffects) { update(wallpaper.copy(touchEffects = it)) }
-                            SettingsToggle("Phone tilt depth", "Subtle parallax while the wallpaper is visible. Automatically pauses in battery saver, reduced motion, and lock-screen dimming.", wallpaper.tiltMotion) { update(wallpaper.copy(tiltMotion = it)) }
-                            SettingsToggle("Time effects", "Let the light change through the day.", wallpaper.timeEffects) { update(wallpaper.copy(timeEffects = it)) }
-                            SettingsToggle("Charging effects", "A gentle light response while charging.", wallpaper.chargingEffects) { update(wallpaper.copy(chargingEffects = it)) }
+                            if (wallpaper.scene.isVideo) {
+                                Text(
+                                    "Video scenes retain their authored resolution and cadence. KepTee changes playback speed without decoding the clip into per-frame bitmaps.",
+                                    color = SettingsMuted,
+                                    fontSize = 12.sp
+                                )
+                                SettingsToggle("Time effects", "Use a subtle slower cadence at night.", wallpaper.timeEffects) { update(wallpaper.copy(timeEffects = it)) }
+                                SettingsToggle("Charging effects", "Use a subtle cadence lift while charging.", wallpaper.chargingEffects) { update(wallpaper.copy(chargingEffects = it)) }
+                            } else {
+                                ValueSlider("Glow intensity", "${(wallpaper.glow * 100).roundToInt()}%", wallpaper.glow, 0f..1f) { update(wallpaper.copy(glow = it)) }
+                                ValueSlider("Particle density", wallpaper.particleDensity.toString(), wallpaper.particleDensity.toFloat(), 0f..60f) { update(wallpaper.copy(particleDensity = it.roundToInt())) }
+                                SettingsToggle("Touch effects", "Ripple light from a touch on your wallpaper.", wallpaper.touchEffects) { update(wallpaper.copy(touchEffects = it)) }
+                                SettingsToggle("Phone tilt depth", "Subtle parallax while the wallpaper is visible. Automatically pauses in battery saver, reduced motion, and lock-screen dimming.", wallpaper.tiltMotion) { update(wallpaper.copy(tiltMotion = it)) }
+                                SettingsToggle("Time effects", "Let the light change through the day.", wallpaper.timeEffects) { update(wallpaper.copy(timeEffects = it)) }
+                                SettingsToggle("Charging effects", "A gentle light response while charging.", wallpaper.chargingEffects) { update(wallpaper.copy(chargingEffects = it)) }
+                            }
                         }
                         SettingsPanel {
                             Text("Performance", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-                            Text("Wallpaper frame rate", fontWeight = FontWeight.Medium)
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                listOf(15, 30, 60, 120).forEach { fps ->
-                                    val selected = wallpaper.fps == fps
-                                    FilterChip(
-                                        selected = selected,
-                                        onClick = { update(wallpaper.copy(fps = fps)) },
-                                        label = { Text("$fps FPS", fontSize = 12.sp, maxLines = 1) },
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .semantics {
-                                                contentDescription = "$fps FPS " + if (selected) "selected" else "not selected"
-                                            }
-                                    )
+                            if (wallpaper.scene.isVideo) {
+                                Text("Video frame cadence", fontWeight = FontWeight.Medium)
+                                Text(
+                                    "Supplied video scenes use their authored 24/30 FPS cadence. The FPS selector applies to KepTee-rendered scenes.",
+                                    color = SettingsMuted,
+                                    fontSize = 12.sp
+                                )
+                            } else {
+                                Text("Wallpaper frame rate", fontWeight = FontWeight.Medium)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    listOf(15, 30, 60, 120).forEach { fps ->
+                                        val selected = wallpaper.fps == fps
+                                        FilterChip(
+                                            selected = selected,
+                                            onClick = { update(wallpaper.copy(fps = fps)) },
+                                            label = { Text("$fps FPS", fontSize = 12.sp, maxLines = 1) },
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .semantics {
+                                                    contentDescription = "$fps FPS " + if (selected) "selected" else "not selected"
+                                                }
+                                        )
+                                    }
                                 }
+                                Text("A target rate, not a guarantee. Android power saving and lock-screen dimming reduce animation; hidden wallpaper stops rendering.", color = SettingsMuted, fontSize = 12.sp)
                             }
-                            Text("A target rate, not a guarantee. Android power saving and lock-screen dimming reduce animation; hidden wallpaper stops rendering.", color = SettingsMuted, fontSize = 12.sp)
                             SettingsToggle("Battery saver", "Limit updates to 10 FPS and turn off particles.", wallpaper.batterySaver) { update(wallpaper.copy(batterySaver = it)) }
                             SettingsToggle("Reduced motion", "Keep a still scene, refreshed only on changes.", wallpaper.reduceMotion) { update(wallpaper.copy(reduceMotion = it)) }
                             SettingsToggle("Dim on lock screen", "Lower light and motion when the device is locked.", wallpaper.dimOnLock) { update(wallpaper.copy(dimOnLock = it)) }
@@ -253,6 +307,33 @@ private fun RasterResourceImage(
             BitmapFactory.Options().apply { inScaled = false }
         )
     }
+    DisposableEffect(bitmap) {
+        onDispose { bitmap?.recycle() }
+    }
+    AndroidView(
+        modifier = modifier.semantics { this.contentDescription = contentDescription },
+        factory = { viewContext ->
+            ImageView(viewContext).apply {
+                scaleType = ImageView.ScaleType.FIT_CENTER
+                adjustViewBounds = true
+                setImageBitmap(bitmap)
+                this.contentDescription = contentDescription
+            }
+        },
+        update = { view ->
+            if (view.drawable == null && bitmap != null && !bitmap.isRecycled) view.setImageBitmap(bitmap)
+            view.contentDescription = contentDescription
+        }
+    )
+}
+
+@Composable
+private fun RasterSuppliedStillImage(
+    contentDescription: String,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val bitmap = remember { WallpaperAssetStore.decodeStill(context.applicationContext) }
     DisposableEffect(bitmap) {
         onDispose { bitmap?.recycle() }
     }

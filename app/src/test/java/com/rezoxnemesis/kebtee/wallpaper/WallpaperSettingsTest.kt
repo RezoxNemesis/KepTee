@@ -61,4 +61,16 @@ class WallpaperSettingsTest {
         assertEquals(0, WallpaperSettings(particleDensity = Int.MIN_VALUE).activeParticleCount(false, false))
         assertEquals(60, WallpaperSettings(particleDensity = Int.MAX_VALUE).activeParticleCount(false, false))
     }
+
+    @Test fun sceneIdsRoundTripAndUnknownValuesFallBackToOriginal() {
+        assertEquals(WallpaperScene.ORIGINAL, WallpaperScene.fromId(null))
+        assertEquals(WallpaperScene.ORIGINAL, WallpaperScene.fromId("not-a-real-scene"))
+        WallpaperScene.entries.forEach { scene ->
+            assertEquals(scene, WallpaperScene.fromId(scene.id))
+        }
+        assertEquals(false, WallpaperScene.ORIGINAL.isVideo)
+        assertEquals(false, WallpaperScene.ASCENSION_STILL.isVideo)
+        assertEquals(true, WallpaperScene.ASCENSION_FLOW.isVideo)
+        assertEquals(true, WallpaperScene.AURA_PULSE.isVideo)
+    }
 }

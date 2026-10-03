@@ -5,11 +5,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
 import android.service.wallpaper.WallpaperService
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.rezoxnemesis.kebtee.wallpaper.KebTeeLiveWallpaperService
+import com.rezoxnemesis.kebtee.wallpaper.WallpaperAssetStore
 import com.rezoxnemesis.kebtee.wallpaper.WallpaperPreferences
+import com.rezoxnemesis.kebtee.wallpaper.WallpaperScene
 import com.rezoxnemesis.kebtee.wallpaper.WallpaperSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -57,6 +60,20 @@ class WallpaperIntegrationTest {
         assertTrue("Silhouette artwork decoded without visible bright figure detail", brightSamples > 100)
         bitmap.recycle()
     }
+    @Test fun suppliedWallpaperAssetsArePackagedAtUsableQuality() {
+        val stillFile = WallpaperAssetStore.materialize(context, WallpaperScene.ASCENSION_STILL)
+        assertNotNull("Supplied ascension still failed checksum reconstruction", stillFile)
+        val still = BitmapFactory.decodeFile(requireNotNull(stillFile).absolutePath)
+        assertNotNull("Supplied ascension still failed to decode", still)
+        requireNotNull(still)
+        assertTrue("Supplied ascension still lost source width", still.width >= 790)
+        assertTrue("Supplied ascension still lost source height", still.height >= 1500)
+        still.recycle()
+
+        assertVideoScene(WallpaperScene.ASCENSION_FLOW, minDurationMs = 7_500L)
+        assertVideoScene(WallpaperScene.AURA_PULSE, minDurationMs = 13_500L)
+    }
+
     @Test fun restoredWrongPreferenceTypesFallBackWithoutCrashing() {
         val preferences = context.getSharedPreferences("wallpaper_integration_test", Context.MODE_PRIVATE)
         try {
@@ -65,12 +82,31 @@ class WallpaperIntegrationTest {
                 .putString("wallpaper_fps", "broken")
                 .putInt("wallpaper_touch", 1)
                 .putFloat("wallpaper_glow", Float.NaN)
-                .putInt("wallpaper_particles", -100).commit()
+                .putInt("wallpaper_particles", -100)
+                .putString("wallpaper_scene", "not-a-real-scene").commit()
             assertEquals(WallpaperSettings(particleDensity = 0), WallpaperPreferences.read(preferences))
-            WallpaperPreferences.write(preferences, WallpaperSettings(reduceMotion = true, fps = 60))
-            assertEquals(WallpaperSettings(reduceMotion = true, fps = 60), WallpaperPreferences.read(preferences))
+            val selected = WallpaperSettings(reduceMotion = true, fps = 60, scene = WallpaperScene.ASCENSION_FLOW)
+            WallpaperPreferences.write(preferences, selected)
+            assertEquals(selected, WallpaperPreferences.read(preferences))
         } finally {
             preferences.edit().clear().commit()
+        }
+    }
+
+    private fun assertVideoScene(scene: WallpaperScene, minDurationMs: Long) {
+        val file = WallpaperAssetStore.materialize(context, scene)
+        assertNotNull("Supplied video failed checksum reconstruction: $scene", file)
+        val retriever = MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(requireNotNull(file).absolutePath)
+            val width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull() ?: 0
+            val height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull() ?: 0
+            val duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+            assertTrue("Bundled video width is below 720p", width >= 720)
+            assertTrue("Bundled video height is below 1280p", height >= 1280)
+            assertTrue("Bundled video duration is unexpectedly short", duration >= minDurationMs)
+        } finally {
+            retriever.release()
         }
     }
 }

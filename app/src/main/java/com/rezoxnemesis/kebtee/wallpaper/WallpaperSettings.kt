@@ -12,7 +12,8 @@ data class WallpaperSettings(
     val chargingEffects: Boolean = true,
     val dimOnLock: Boolean = true,
     val reduceMotion: Boolean = false,
-    val tiltMotion: Boolean = true
+    val tiltMotion: Boolean = true,
+    val scene: WallpaperScene = WallpaperScene.ORIGINAL
 ) {
     fun normalized() = copy(
         speed = if (speed.isFinite()) speed.coerceIn(0.25f, 2f) else 1f,

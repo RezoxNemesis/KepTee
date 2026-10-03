@@ -6,7 +6,7 @@ object WallpaperPreferences {
     const val FILE_NAME = "kebtee_preferences"
     private val keys = setOf("wallpaper_speed", "wallpaper_glow", "wallpaper_particles", "wallpaper_touch",
         "wallpaper_battery_saver", "wallpaper_fps", "wallpaper_time", "wallpaper_charging", "wallpaper_dim_lock", "reduce_motion",
-        "wallpaper_tilt")
+        "wallpaper_tilt", "wallpaper_scene")
 
     fun isWallpaperKey(key: String?) = key == null || key in keys
 
@@ -25,7 +25,8 @@ object WallpaperPreferences {
             chargingEffects = flag("wallpaper_charging", true),
             dimOnLock = flag("wallpaper_dim_lock", true),
             reduceMotion = flag("reduce_motion", false),
-            tiltMotion = flag("wallpaper_tilt", true)
+            tiltMotion = flag("wallpaper_tilt", true),
+            scene = WallpaperScene.fromId(values["wallpaper_scene"] as? String)
         ).normalized()
     }
 
@@ -36,7 +37,7 @@ object WallpaperPreferences {
             .putBoolean("wallpaper_battery_saver", value.batterySaver).putInt("wallpaper_fps", value.fps)
             .putBoolean("wallpaper_time", value.timeEffects).putBoolean("wallpaper_charging", value.chargingEffects)
             .putBoolean("wallpaper_dim_lock", value.dimOnLock).putBoolean("reduce_motion", value.reduceMotion)
-            .putBoolean("wallpaper_tilt", value.tiltMotion).apply()
+            .putBoolean("wallpaper_tilt", value.tiltMotion).putString("wallpaper_scene", value.scene.id).apply()
     }
 
     fun reset(preferences: SharedPreferences) = write(preferences, WallpaperSettings())
