@@ -207,7 +207,7 @@ private fun KebTeeHome(
         Feature("Theme Studio", "Choose your KepTee accent", Icons.Default.Palette, Violet, FeatureAction.THEME),
         Feature("Home Experience", "Open your home-screen settings", Icons.Default.Home, Pink, FeatureAction.HOME),
         Feature("Volume Lab", "Custom in-app audio sliders", Icons.Default.Tune, Cyan, FeatureAction.VOLUME),
-        Feature("Notifications", "Manage KebTee notifications", Icons.Default.Notifications, Violet, FeatureAction.NOTIFICATIONS),
+        Feature("Notifications", "Manage KepTee notifications", Icons.Default.Notifications, Violet, FeatureAction.NOTIFICATIONS),
         Feature("Effects & Motion", "Set a lighter visual experience", Icons.Default.Bolt, Pink, FeatureAction.MOTION),
         Feature("Control Center", "Fast access to system panels", Icons.Default.Tune, Green, FeatureAction.CONTROL_CENTER)
     )
@@ -221,8 +221,8 @@ private fun KebTeeHome(
             Spacer(Modifier.height(18.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 androidx.compose.foundation.Image(
-                    painter = androidx.compose.ui.res.painterResource(id = com.rezoxnemesis.kebtee.R.drawable.ic_kebtee_mark),
-                    contentDescription = "KebTee logo",
+                    painter = androidx.compose.ui.res.painterResource(id = com.rezoxnemesis.kebtee.R.drawable.kebtee_logo_master),
+                    contentDescription = "KepTee approved logo",
                     modifier = Modifier.size(54.dp)
                 )
                 Spacer(Modifier.width(13.dp))
@@ -264,7 +264,7 @@ private fun KebTeeHome(
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
                                 Text("MONOCHROME / 001", fontSize = 10.sp, letterSpacing = 2.sp, color = Cyan, fontWeight = FontWeight.Bold)
-                                Text("KebTee Silhouette", fontSize = 21.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("KepTee Silhouette", fontSize = 21.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                 Text("Live wallpaper • battery-aware", fontSize = 12.sp, color = Color(0xFFBBC6E0))
                             }
                         }
@@ -421,7 +421,7 @@ private fun FeatureDialog(
             ) {
                 when (feature.action) {
                     FeatureAction.THEME -> {
-                        Text("Choose the accent used across KebTee. Your choice updates the interface immediately.")
+                        Text("Choose the accent used across KepTee. Your choice updates the interface immediately.")
                         listOf(Violet to "Ultraviolet", Cyan to "Cyber cyan", Pink to "Pulse pink", Green to "Mint circuit").forEach { (color, label) ->
                             Surface(
                                 Modifier.fillMaxWidth().clickable { onAccentChange(color) },
@@ -444,7 +444,7 @@ private fun FeatureDialog(
                     }
                     FeatureAction.VOLUME -> {
                         Text(
-                            "Adjust audio streams directly from KebTee. Android may link ring and notification volume on some devices; the system volume popup itself remains controlled by Android.",
+                            "Adjust audio streams directly from KepTee. Android may link ring and notification volume on some devices; the system volume popup itself remains controlled by Android.",
                             color = Muted, fontSize = 12.sp, lineHeight = 17.sp
                         )
                         listOf(
@@ -484,7 +484,7 @@ private fun FeatureDialog(
                         Text("Note: some Android versions merge ring and notification volume.", color = Muted, fontSize = 11.sp)
                     }
                     FeatureAction.NOTIFICATIONS -> {
-                        Text("Send a real test notification to verify KebTee's notification channel, or open Android settings to adjust permission and alerts.")
+                        Text("Send a real test notification to verify KepTee's notification channel, or open Android settings to adjust permission and alerts.")
                         Button(
                             onClick = { onTestNotification(); onDismiss() },
                             modifier = Modifier.fillMaxWidth()
@@ -495,7 +495,7 @@ private fun FeatureDialog(
                         ) { Text("Notification settings") }
                     }
                     FeatureAction.MOTION -> {
-                        Text("Reduce visual motion in KebTee's preview. The live wallpaper service also pauses drawing when it isn't visible.")
+                        Text("Reduce visual motion in KepTee's preview. The live wallpaper service also pauses drawing when it isn't visible.")
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("Reduced-motion preview", Modifier.weight(1f), color = Color.White)
                             Switch(checked = reduceMotion, onCheckedChange = onReduceMotionChange)
