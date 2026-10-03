@@ -132,4 +132,14 @@ class LauncherLayoutTest {
         assertEquals(layout, layout.remove(c))
     }
 
+    @Test fun backupRoundTripPreserves120FpsWallpaperSetting() {
+        val data = LauncherBackupData(
+            layout = LauncherLayout(pages = listOf(listOf(app(a)))),
+            wallpaper = com.rezoxnemesis.kebtee.wallpaper.WallpaperSettings(fps = 120)
+        )
+        val decoded = LauncherBackupCodec.decode(LauncherBackupCodec.encode(data))
+        assertEquals(120, decoded.wallpaper.fps)
+        assertEquals(data.layout.normalized(), decoded.layout)
+    }
+
 }
