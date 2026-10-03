@@ -49,6 +49,17 @@ class LauncherLayoutTest {
         assertEquals(listOf(a, c), layout.dock)
     }
 
+    @Test fun normalizationRemovesDockMembersFromHomePlacement() {
+        val layout = LauncherLayout(
+            pages = listOf(listOf(app(a), HomeItem("folder:work", listOf(b, a), "Work"))),
+            dock = listOf(a)
+        ).normalized()
+
+        assertEquals(listOf(a), layout.dock)
+        assertEquals(listOf(listOf(app(b))), layout.pages)
+        assertFalse(layout.pages.flatten().flatMap { it.apps }.contains(a))
+    }
+
     @Test fun removalDissolvesSingletonFolderAndRemovesEmptyItems() {
         val layout = LauncherLayout(pages = listOf(listOf(HomeItem("folder:a", listOf(a, b)), app(c))), dock = listOf(a, c))
         val removed = layout.remove(a).remove(c)
