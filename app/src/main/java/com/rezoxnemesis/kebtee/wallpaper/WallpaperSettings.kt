@@ -28,12 +28,15 @@ data class WallpaperSettings(
     fun frameIntervalMillis(
         systemPowerSaver: Boolean,
         locked: Boolean,
-        displayRefreshRateHz: Float = Float.NaN
+        displayRefreshRateHz: Float = Float.NaN,
+        lowRamDevice: Boolean = false
     ): Long = when {
         reduceMotion -> 0L
         batterySaver || systemPowerSaver || (locked && dimOnLock) -> 100L
         else -> {
-            val requested = boundedFps().toFloat()
+            // Low-RAM devices get an automatic quality tier: preserve motion but avoid
+            // spending their tighter memory/thermal budget on 60/120 Hz still-scene loops.
+            val requested = (if (lowRamDevice) minOf(boundedFps(), 30) else boundedFps()).toFloat()
             val effective = if (displayRefreshRateHz.isFinite() && displayRefreshRateHz > 0f) {
                 minOf(requested, displayRefreshRateHz)
             } else requested
@@ -44,8 +47,13 @@ data class WallpaperSettings(
     fun tiltEnabled(systemPowerSaver: Boolean, locked: Boolean): Boolean =
         tiltMotion && !reduceMotion && !batterySaver && !systemPowerSaver && !(locked && dimOnLock)
 
-    fun activeParticleCount(systemPowerSaver: Boolean, locked: Boolean): Int = when {
+    fun activeParticleCount(
+        systemPowerSaver: Boolean,
+        locked: Boolean,
+        lowRamDevice: Boolean = false
+    ): Int = when {
         reduceMotion || batterySaver || systemPowerSaver || (locked && dimOnLock) -> 0
+        lowRamDevice -> (particleDensity.coerceIn(0, 60) + 1) / 2
         else -> particleDensity.coerceIn(0, 60)
     }
 
