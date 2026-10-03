@@ -83,7 +83,7 @@ class HomeLauncherActivity : ComponentActivity() {
             MaterialTheme(colorScheme = darkColorScheme(primary = cyan, secondary = cyan, background = night, surface = panel)) {
                 Column(
                     Modifier.fillMaxSize()
-                        .background(Brush.verticalGradient(listOf(Color(0xFF10172D), night, Color(0xFF090D1C))))
+                        .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.42f), Color.Black.copy(alpha = 0.18f), Color.Black.copy(alpha = 0.46f))))
                         .statusBarsPadding().navigationBarsPadding().padding(horizontal = 20.dp, vertical = 16.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
