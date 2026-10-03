@@ -3,6 +3,7 @@ package com.rezoxnemesis.kebtee
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.lifecycle.Lifecycle
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Test
@@ -34,6 +35,20 @@ class StartupSmokeTest {
                 assertFalse("Home launcher unexpectedly finished during startup", activity.isFinishing)
                 assertNotNull("Home launcher has no window", activity.window)
                 assertNotNull("Home launcher has no content view", activity.findViewById(android.R.id.content))
+            }
+        }
+    }
+
+    @Test
+    fun homeLauncherSurvivesBackgroundResumeAndRecreation() {
+        ActivityScenario.launch(HomeLauncherActivity::class.java).use { scenario ->
+            scenario.moveToState(Lifecycle.State.CREATED)
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            scenario.recreate()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            scenario.onActivity { activity ->
+                assertFalse(activity.isFinishing)
+                assertNotNull(activity.findViewById(android.R.id.content))
             }
         }
     }

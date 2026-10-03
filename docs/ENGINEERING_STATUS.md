@@ -12,4 +12,3 @@ Focused JVM regression checks executed locally: 16 tests passed across UPlay URL
 - Run emulator/device core flows and configuration changes; test offline, denied permissions and unavailable storage.
 - Verify signed upgrades and native-library/device compatibility before distribution.
 - Keep signing material outside Git. No paid dependencies were introduced.
-
