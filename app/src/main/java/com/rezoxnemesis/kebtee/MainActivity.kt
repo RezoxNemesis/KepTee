@@ -62,9 +62,12 @@ class MainActivity : ComponentActivity() {
             }
             MaterialTheme(colorScheme = darkColorScheme(
                 primary = SettingsSilver, onPrimary = Color.Black,
-                secondary = SettingsSilver, background = Color.Black,
+                secondary = SettingsSilver,
+                secondaryContainer = Color(0xFF303236), onSecondaryContainer = SettingsSilver,
+                background = Color.Black, onBackground = SettingsSilver,
                 surface = SettingsGlass, onSurface = SettingsSilver,
-                onBackground = SettingsSilver, outline = Color(0xFF3A3C40)
+                surfaceVariant = Color(0xFF202225), onSurfaceVariant = SettingsMuted,
+                outline = Color(0xFF3A3C40)
             )) {
                 Surface(Modifier.fillMaxSize(), color = Color.Black) {
                     Column(
@@ -134,7 +137,15 @@ class MainActivity : ComponentActivity() {
                             Text("Wallpaper frame rate", fontWeight = FontWeight.Medium)
                             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 listOf(15, 30, 60).forEach { fps ->
-                                    FilterChip(selected = wallpaper.fps == fps, onClick = { update(wallpaper.copy(fps = fps)) }, label = { Text("$fps FPS") })
+                                    val selected = wallpaper.fps == fps
+                                    FilterChip(
+                                        selected = selected,
+                                        onClick = { update(wallpaper.copy(fps = fps)) },
+                                        label = { Text("$fps FPS") },
+                                        modifier = Modifier.semantics {
+                                            contentDescription = "$fps FPS " + if (selected) "selected" else "not selected"
+                                        }
+                                    )
                                 }
                             }
                             Text("A target rate, not a guarantee. Android power saving and lock-screen dimming reduce animation; hidden wallpaper stops rendering.", color = SettingsMuted, fontSize = 12.sp)
