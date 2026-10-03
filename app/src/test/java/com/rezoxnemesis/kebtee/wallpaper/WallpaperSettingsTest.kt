@@ -9,7 +9,7 @@ class WallpaperSettingsTest {
         assertEquals(1f, settings.speed, 0f)
         assertEquals(0.45f, settings.glow, 0f)
         assertEquals(60, settings.particleDensity)
-        assertEquals(60, settings.fps)
+        assertEquals(120, settings.fps)
         assertEquals(0, WallpaperSettings(particleDensity = -1).normalized().particleDensity)
     }
 
@@ -37,7 +37,8 @@ class WallpaperSettingsTest {
     @Test fun renderBudgetIsSafeBeforePersistenceNormalization() {
         assertEquals(66L, WallpaperSettings(fps = Int.MIN_VALUE).frameIntervalMillis(false, false))
         assertEquals(33L, WallpaperSettings(fps = 16).frameIntervalMillis(false, false))
-        assertEquals(16L, WallpaperSettings(fps = Int.MAX_VALUE).frameIntervalMillis(false, false))
+        assertEquals(8L, WallpaperSettings(fps = Int.MAX_VALUE).frameIntervalMillis(false, false))
+        assertEquals(8L, WallpaperSettings(fps = 120).frameIntervalMillis(false, false))
         assertEquals(0, WallpaperSettings(particleDensity = Int.MIN_VALUE).activeParticleCount(false, false))
         assertEquals(60, WallpaperSettings(particleDensity = Int.MAX_VALUE).activeParticleCount(false, false))
     }
