@@ -5,7 +5,8 @@ import android.content.SharedPreferences
 object WallpaperPreferences {
     const val FILE_NAME = "kebtee_preferences"
     private val keys = setOf("wallpaper_speed", "wallpaper_glow", "wallpaper_particles", "wallpaper_touch",
-        "wallpaper_battery_saver", "wallpaper_fps", "wallpaper_time", "wallpaper_charging", "wallpaper_dim_lock", "reduce_motion")
+        "wallpaper_battery_saver", "wallpaper_fps", "wallpaper_time", "wallpaper_charging", "wallpaper_dim_lock", "reduce_motion",
+        "wallpaper_tilt")
 
     fun isWallpaperKey(key: String?) = key == null || key in keys
 
@@ -23,7 +24,8 @@ object WallpaperPreferences {
             timeEffects = flag("wallpaper_time", true),
             chargingEffects = flag("wallpaper_charging", true),
             dimOnLock = flag("wallpaper_dim_lock", true),
-            reduceMotion = flag("reduce_motion", false)
+            reduceMotion = flag("reduce_motion", false),
+            tiltMotion = flag("wallpaper_tilt", true)
         ).normalized()
     }
 
@@ -33,7 +35,8 @@ object WallpaperPreferences {
             .putInt("wallpaper_particles", value.particleDensity).putBoolean("wallpaper_touch", value.touchEffects)
             .putBoolean("wallpaper_battery_saver", value.batterySaver).putInt("wallpaper_fps", value.fps)
             .putBoolean("wallpaper_time", value.timeEffects).putBoolean("wallpaper_charging", value.chargingEffects)
-            .putBoolean("wallpaper_dim_lock", value.dimOnLock).putBoolean("reduce_motion", value.reduceMotion).apply()
+            .putBoolean("wallpaper_dim_lock", value.dimOnLock).putBoolean("reduce_motion", value.reduceMotion)
+            .putBoolean("wallpaper_tilt", value.tiltMotion).apply()
     }
 
     fun reset(preferences: SharedPreferences) = write(preferences, WallpaperSettings())
