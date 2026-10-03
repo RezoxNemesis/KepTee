@@ -202,9 +202,16 @@ class HomeLauncherActivity : ComponentActivity() {
         val currentPage = page.coerceIn(0, layout.pages.lastIndex)
         val shown = remember(apps, query, layout.hidden, sort, drawer, usageRevision) {
             val filtered = apps.filter { it.key !in layout.hidden && (query.isBlank() || it.label.contains(query.trim(), true)) }
+            val byKey = filtered.associateBy { it.key }
+            val usageEntries = filtered.map { app ->
+                LauncherUsageEntry(
+                    key = app.key,
+                    lastUsedMillis = usage.getLong("last:${app.key}", 0),
+                    launchCount = usage.getInt("count:${app.key}", 0)
+                )
+            }
             when (sort) {
-                "Recent" -> filtered.filter { usage.getLong("last:${it.key}", 0) > 0 }.sortedByDescending { usage.getLong("last:${it.key}", 0) }
-                "Most used" -> filtered.filter { usage.getInt("count:${it.key}", 0) > 0 }.sortedByDescending { usage.getInt("count:${it.key}", 0) }
+                "Recent", "Most used" -> orderLauncherUsage(usageEntries, sort).mapNotNull(byKey::get)
                 else -> filtered
             }
         }
