@@ -164,9 +164,12 @@ class HomeLauncherActivity : ComponentActivity() {
                         save(LauncherLayout(dock = defaults.map { it.key }))
                     }
                 }
+                // Read after migration/default initialization; the Compose state captured by this
+                // coroutine may still hold the pre-migration layout.
+                val currentLayout = LauncherLayoutStore.read(preferences)
                 val availableKeys = result.asSequence().map { it.key }.toSet()
-                val repaired = layout.pruneUnavailable(availableKeys)
-                if (repaired != layout) save(repaired)
+                val repaired = currentLayout.pruneUnavailable(availableKeys)
+                if (repaired != currentLayout) save(repaired)
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: RuntimeException) { loadError = "Apps could not be loaded. Tap Retry." }
             finally { if (isActive) loading = false }
