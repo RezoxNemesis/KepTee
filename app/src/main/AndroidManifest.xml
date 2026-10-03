@@ -6,7 +6,7 @@
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:label="KebTee"
+        android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.KebTee">
         <activity
@@ -17,12 +17,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".HomeLauncherActivity" android:exported="true" android:label="KebTee Home">
+        <activity android:name=".HomeLauncherActivity" android:exported="true" android:label="KepTee Home">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.HOME" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>
         </activity>
         <service
             android:name=".wallpaper.KebTeeLiveWallpaperService"
-            android:label="KebTee Silhouette"
+            android:label="KepTee Silhouette"
             android:permission="android.permission.BIND_WALLPAPER"
             android:exported="true">
             <intent-filter>
