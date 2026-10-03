@@ -135,6 +135,41 @@ class LauncherLayoutTest {
         assertEquals(layout, layout.remove(c))
     }
 
+    @Test fun recentRankingExcludesNeverUsedAppsAndKeepsStableTies() {
+        val entries = listOf(
+            LauncherUsageEntry("a", 100L, 5),
+            LauncherUsageEntry("b", 300L, 1),
+            LauncherUsageEntry("c", 0L, 9),
+            LauncherUsageEntry("d", 300L, 4)
+        )
+        assertEquals(
+            listOf("b", "d", "a"),
+            orderLauncherUsage(entries, "Recent").map { it.key }
+        )
+    }
+
+    @Test fun mostUsedRankingExcludesZeroCountAppsAndSortsByLaunchCount() {
+        val entries = listOf(
+            LauncherUsageEntry("a", 100L, 5),
+            LauncherUsageEntry("b", 300L, 1),
+            LauncherUsageEntry("c", 500L, 0),
+            LauncherUsageEntry("d", 700L, 5)
+        )
+        assertEquals(
+            listOf("a", "d", "b"),
+            orderLauncherUsage(entries, "Most used").map { it.key }
+        )
+    }
+
+    @Test fun nonUsageRankingLeavesInputOrderUntouched() {
+        val entries = listOf(
+            LauncherUsageEntry("c", 0L, 0),
+            LauncherUsageEntry("a", 100L, 3),
+            LauncherUsageEntry("b", 200L, 2)
+        )
+        assertEquals(entries, orderLauncherUsage(entries, "A–Z"))
+    }
+
     @Test fun backupRoundTripPreservesTiltMotionSetting() {
         val data = LauncherBackupData(
             layout = LauncherLayout(pages = listOf(listOf(app(a)))),
