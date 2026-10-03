@@ -20,6 +20,15 @@
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.HOME" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>
         </activity>
         <service
+            android:name=".KepTeeNotificationListenerService"
+            android:label="KepTee notification badges"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+        <service
             android:name=".wallpaper.KebTeeLiveWallpaperService"
             android:label="KepTee Silhouette"
             android:permission="android.permission.BIND_WALLPAPER"
