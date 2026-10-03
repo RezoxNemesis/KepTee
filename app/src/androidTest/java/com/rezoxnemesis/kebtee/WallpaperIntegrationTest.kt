@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import android.media.MediaPlayer
 import android.service.wallpaper.WallpaperService
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -66,12 +67,12 @@ class WallpaperIntegrationTest {
         val still = BitmapFactory.decodeFile(requireNotNull(stillFile).absolutePath)
         assertNotNull("Supplied ascension still failed to decode", still)
         requireNotNull(still)
-        assertTrue("Supplied ascension still lost source width", still.width >= 790)
-        assertTrue("Supplied ascension still lost source height", still.height >= 1500)
+        assertEquals("Supplied ascension still width changed", 796, still.width)
+        assertEquals("Supplied ascension still height changed", 1536, still.height)
         still.recycle()
 
-        assertVideoScene(WallpaperScene.ASCENSION_FLOW, minDurationMs = 7_500L)
-        assertVideoScene(WallpaperScene.AURA_PULSE, minDurationMs = 13_500L)
+        assertVideoScene(WallpaperScene.ASCENSION_FLOW, expectedWidth = 1080, expectedHeight = 1920, minDurationMs = 7_500L)
+        assertVideoScene(WallpaperScene.AURA_PULSE, expectedWidth = 1440, expectedHeight = 2560, minDurationMs = 13_500L)
     }
 
     @Test fun restoredWrongPreferenceTypesFallBackWithoutCrashing() {
@@ -93,7 +94,7 @@ class WallpaperIntegrationTest {
         }
     }
 
-    private fun assertVideoScene(scene: WallpaperScene, minDurationMs: Long) {
+    private fun assertVideoScene(scene: WallpaperScene, expectedWidth: Int, expectedHeight: Int, minDurationMs: Long) {
         val file = WallpaperAssetStore.materialize(context, scene)
         assertNotNull("Supplied video failed checksum reconstruction: $scene", file)
         val retriever = MediaMetadataRetriever()
@@ -102,11 +103,20 @@ class WallpaperIntegrationTest {
             val width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull() ?: 0
             val height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull() ?: 0
             val duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
-            assertTrue("Bundled video width is below 720p", width >= 720)
-            assertTrue("Bundled video height is below 1280p", height >= 1280)
+            assertEquals("Bundled video width changed", expectedWidth, width)
+            assertEquals("Bundled video height changed", expectedHeight, height)
             assertTrue("Bundled video duration is unexpectedly short", duration >= minDurationMs)
         } finally {
             retriever.release()
+        }
+
+        val player = MediaPlayer()
+        try {
+            player.setDataSource(requireNotNull(file).absolutePath)
+            player.prepare()
+            assertTrue("Android MediaPlayer rejected the bundled video duration", player.duration >= minDurationMs)
+        } finally {
+            player.release()
         }
     }
 }
