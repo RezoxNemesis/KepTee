@@ -8,12 +8,12 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -24,9 +24,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -74,7 +73,11 @@ class MainActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Image(painterResource(R.drawable.kebtee_logo_master), "KepTee logo", Modifier.size(54.dp), contentScale = ContentScale.Fit)
+                            RasterResourceImage(
+                                resId = R.drawable.kebtee_logo_master,
+                                contentDescription = "KepTee logo",
+                                modifier = Modifier.size(54.dp)
+                            )
                             Spacer(Modifier.width(14.dp))
                             Column {
                                 Text("KepTee", fontSize = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
@@ -108,7 +111,11 @@ class MainActivity : ComponentActivity() {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text("LIVE WALLPAPER", fontSize = 11.sp, letterSpacing = 2.sp, color = SettingsMuted)
                             Text("Silhouette", fontSize = 28.sp, fontWeight = FontWeight.Light)
-                            Image(painterResource(R.drawable.kebtee_silhouette), "Original KepTee silhouette artwork", Modifier.fillMaxWidth().height(200.dp).background(Color.Black), contentScale = ContentScale.Fit)
+                            RasterResourceImage(
+                                resId = R.drawable.kebtee_silhouette,
+                                contentDescription = "Original KepTee silhouette artwork",
+                                modifier = Modifier.fillMaxWidth().height(200.dp).background(Color.Black)
+                            )
                             Text(if (wallpaperApplied) "Silhouette is active. Controls below update it immediately." else "Original artwork with light, particles and motion. Preview the real wallpaper in Android before applying it.", color = SettingsMuted, fontSize = 13.sp)
                             Button(onClick = ::openWallpaperPicker, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)) { Text("Choose & Apply Wallpaper") }
                             Text("Android controls whether a live wallpaper appears on Home, the lock screen, or both. Available choices depend on your device.", color = SettingsMuted, fontSize = 12.sp)
@@ -194,6 +201,29 @@ class MainActivity : ComponentActivity() {
         true
     } catch (_: android.content.ActivityNotFoundException) { false }
       catch (_: SecurityException) { false }
+}
+
+@Composable
+private fun RasterResourceImage(
+    resId: Int,
+    contentDescription: String,
+    modifier: Modifier = Modifier
+) {
+    AndroidView(
+        modifier = modifier.semantics { this.contentDescription = contentDescription },
+        factory = { context ->
+            ImageView(context).apply {
+                scaleType = ImageView.ScaleType.FIT_CENTER
+                adjustViewBounds = true
+                setImageResource(resId)
+                this.contentDescription = contentDescription
+            }
+        },
+        update = { view ->
+            view.setImageResource(resId)
+            view.contentDescription = contentDescription
+        }
+    )
 }
 
 @Composable
