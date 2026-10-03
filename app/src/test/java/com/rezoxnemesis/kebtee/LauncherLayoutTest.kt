@@ -56,7 +56,10 @@ class LauncherLayoutTest {
         ).normalized()
 
         assertEquals(listOf(a), layout.dock)
-        assertEquals(listOf(listOf(app(b))), layout.pages)
+        assertEquals(
+            listOf(listOf(HomeItem("folder:work", listOf(b), "Work"))),
+            layout.pages
+        )
         assertFalse(layout.pages.flatten().flatMap { it.apps }.contains(a))
     }
 
