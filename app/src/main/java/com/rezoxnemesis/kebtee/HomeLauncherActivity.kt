@@ -95,7 +95,13 @@ class HomeLauncherActivity : ComponentActivity() {
                 surfaceVariant = Color(0xFF1A1C1F), onSurfaceVariant = Silver.copy(alpha = .72f),
                 outline = Silver.copy(alpha = .24f)
             )) {
-                Launcher()
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = Color.Transparent,
+                    contentColor = Silver
+                ) {
+                    Launcher()
+                }
             }
         }
     }
